@@ -4,7 +4,7 @@
 const SUPABASE_URL = "https://lkxepxetmlelkjkvsoks.supabase.co";
 const SUPABASE_KEY = "sb_publishable_q9el2WqRhZwtfxXtTDvjNw_-FBHcCWK";
 
-const supabase = window.supabase.createClient(
+const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY
 );
@@ -25,7 +25,7 @@ form.addEventListener("submit", async (e) => {
 
     mensaje.textContent = "Creando cuenta...";
 
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await supabaseClient.auth.signUp({
         email: email,
         password: password
     });
