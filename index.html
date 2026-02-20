@@ -1,24 +1,29 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Peluquería - Inicio</title>
     <link rel="stylesheet" href="Jorge_Lerga_Ruiz_CSS.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
     <script src="auth.js"></script>
 </head>
+
 <body>
     <header>
         <div class="logo">✂️ [LOGO]</div>
         <nav>
             <ul>
-                <li><a href="Jorge_Lerga_Ruiz_Index.html" class="activo">Inicio</a></li>
+                <li><a href="index.html" class="activo">Inicio</a></li>
                 <li><a href="#servicios">Servicios</a></li>
                 <li><a href="Jorge_Lerga_Ruiz_galeria.html">Galería</a></li>
                 <li><a href="Jorge_Lerga_Ruiz_informacion.html">Contacto</a></li>
+                <li><a href="#" id="btnLogout" style="color: #ff6b6b; font-weight: bold;">Salir 🚪</a></li>
             </ul>
         </nav>
-        
+
         <div class="selector-idioma">
             <select name="idioma">
                 <option value="es">🇪🇸 Español</option>
@@ -32,42 +37,36 @@
         <section class="presentacion">
             <div class="texto">
                 <h2>Bienvenido a nuestra peluquería</h2>
-                <p>
-                    Ofrecemos servicios de peluquería, estética y cuidado capilar para todo tipo de clientes.
-                    Nos esforzamos por ofrecer un trato personalizado y resultados profesionales.
-                </p>
+                <p>Ofrecemos servicios de peluquería, estética y cuidado capilar para todo tipo de clientes. Nos
+                    esforzamos por ofrecer un trato personalizado y resultados profesionales.</p>
                 <img src="salon_interior.jpg" alt="Interior de la peluquería" class="imagen-destacada">
-                
-                <button class="boton-cita">Reservar cita</button>
+                <button class="boton-cita" onclick="document.getElementById('servicios').scrollIntoView();">Reservar
+                    cita</button>
             </div>
 
             <div class="sugerencias">
                 <h3>Deja tu sugerencia</h3>
-                <form>
-                    <textarea placeholder="Escribe tu sugerencia aquí..." required></textarea>
+                <form id="form-sugerencias">
+                    <textarea id="sugerencia-texto" placeholder="Escribe tu sugerencia aquí..." required></textarea>
                     <button type="submit">Enviar Sugerencia</button>
                 </form>
             </div>
         </section>
 
         <section id="servicios" class="contenedor-servicios">
-            
             <div class="servicios">
                 <h3>Nuestros Servicios Profesionales</h3>
-                
                 <div class="detalle-servicios">
                     <article class="tarjeta-servicio">
                         <h4>✂️ Corte de Pelo</h4>
                         <p>Cortes adaptados a tu estilo. Incluye lavado y masaje.</p>
                         <span class="precio">Desde 25€</span>
                     </article>
-
                     <article class="tarjeta-servicio">
                         <h4>🎨 Coloración</h4>
                         <p>Mechas Balayage, tintes sin amoniaco y corrección de color.</p>
                         <span class="precio">Desde 45€</span>
                     </article>
-
                     <article class="tarjeta-servicio">
                         <h4>✨ Tratamientos</h4>
                         <p>Hidratación profunda, botox capilar y keratina.</p>
@@ -78,56 +77,56 @@
 
             <div class="contacto">
                 <h3>Reserva tu servicio ahora</h3>
-                <form>
-                    <label>Nombre:</label>
-                    <input type="text" placeholder="Tu nombre" required>
-                    
+                <form id="form-citas">
                     <label>Servicio:</label>
-                    <select>
-                        <option>Corte</option>
-                        <option>Color</option>
-                        <option>Tratamiento</option>
+                    <select id="cita-servicio">
+                        <option value="Corte">Corte</option>
+                        <option value="Color">Color</option>
+                        <option value="Tratamiento">Tratamiento</option>
                     </select>
 
                     <label>Fecha preferida:</label>
-                    <input type="date">
+                    <input type="date" id="cita-fecha" required>
+
+                    <label>Hora preferida:</label>
+                    <input type="time" id="cita-hora" required>
 
                     <button type="submit">Solicitar Cita</button>
                 </form>
             </div>
         </section>
+
         <script>
-  window.addEventListener('mouseover', initLandbot, { once: true });
-  window.addEventListener('touchstart', initLandbot, { once: true });
-  var myLandbot;
-  function initLandbot() {
-    if (!myLandbot) {
-      var s = document.createElement('script');
-      s.type = "module"
-      s.async = true;
-      s.addEventListener('load', function() {
-        var myLandbot = new Landbot.Livechat({
-          configUrl: 'https://storage.googleapis.com/landbot.online/v3/H-3325724-7SW6UG9JUYUKA2SB/index.json',
-        });
-      });
-      s.src = 'https://cdn.landbot.io/landbot-3/landbot-3.0.0.mjs';
-      var x = document.getElementsByTagName('script')[0];
-      x.parentNode.insertBefore(s, x);
-    }
-  }
-</script>
+            window.addEventListener('mouseover', initLandbot, { once: true });
+            window.addEventListener('touchstart', initLandbot, { once: true });
+            var myLandbot;
+            function initLandbot() {
+                if (!myLandbot) {
+                    var s = document.createElement('script');
+                    s.type = "module"
+                    s.async = true;
+                    s.addEventListener('load', function () {
+                        var myLandbot = new Landbot.Livechat({
+                            configUrl: 'https://storage.googleapis.com/landbot.online/v3/H-3325724-7SW6UG9JUYUKA2SB/index.json',
+                        });
+                    });
+                    s.src = 'https://cdn.landbot.io/landbot-3/landbot-3.0.0.mjs';
+                    var x = document.getElementsByTagName('script')[0];
+                    x.parentNode.insertBefore(s, x);
+                }
+            }
+        </script>
     </main>
 
     <footer>
         <p>
-            <a href="Jorge_Lerga_Ruiz_informacion.html">📍 Dirección</a> | 
-            <a href="Jorge_Lerga_Ruiz_informacion.html">📞 Teléfono</a> | 
+            <a href="Jorge_Lerga_Ruiz_informacion.html">📍 Dirección</a> |
+            <a href="Jorge_Lerga_Ruiz_informacion.html">📞 Teléfono</a> |
             <a href="Jorge_Lerga_Ruiz_informacion.html">⏰ Horario</a>
         </p>
     </footer>
-    
+
+    <script src="app.js"></script>
 </body>
 
 </html>
-
-

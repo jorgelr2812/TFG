@@ -1,47 +1,34 @@
-// ===============================
-// CONFIGURACION SUPABASE
-// ===============================
-const SUPABASE_URL = "https://lkxepxetmlelkjkvsoks.supabase.co";
-const SUPABASE_KEY = "sb_publishable_q9el2WqRhZwtfxXtTDvjNw_-FBHcCWK";
+// register.js
 
-const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
+const registerForm = document.getElementById("registerForm");
 
+if (registerForm) {
+    registerForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-// ===============================
-// REGISTRO
-// ===============================
+        // El trim() evita que un espacio en blanco rompa el registro
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value.trim();
+        const mensaje = document.getElementById("mensaje");
 
-const form = document.getElementById("registerForm");
+        mensaje.textContent = "Creando cuenta...";
 
-form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+        const { data, error } = await supabaseClient.auth.signUp({
+            email: email,
+            password: password
+        });
 
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-    const mensaje = document.getElementById("mensaje");
+        if (error) {
+            mensaje.style.color = "red";
+            mensaje.textContent = error.message;
+            return;
+        }
 
-    mensaje.textContent = "Creando cuenta...";
+        mensaje.style.color = "green";
+        mensaje.textContent = "Cuenta creada correctamente. Entrando...";
 
-    const { data, error } = await supabaseClient.auth.signUp({
-        email: email,
-        password: password
+        setTimeout(() => {
+            window.location.href = "index.html";
+        }, 1500);
     });
-
-    if(error){
-        mensaje.style.color = "red";
-        mensaje.textContent = error.message;
-        return;
-    }
-
-    mensaje.style.color = "green";
-    mensaje.textContent = "Cuenta creada correctamente. Redirigiendo...";
-
-    setTimeout(() => {
-        window.location.href = "index.html";
-        
-    }, 1500);
-});
-
+}

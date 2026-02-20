@@ -1,21 +1,34 @@
-// ===============================
-// CONFIGURACION SUPABASE
-// ===============================
-const SUPABASE_URL = "https://lkxepxetmlelkjkvsoks.supabase.co";
-const SUPABASE_KEY = "sb_publishable_q9el2WqRhZwtfxXtTDvjNw_-FBHcCWK";
+// auth.js
 
-const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
+// ===============================
+// PROTECCIÓN DE RUTAS Y SESIÓN REAL
+// ===============================
+async function checkSession() {
+    // Le preguntamos a Supabase si el usuario tiene una sesión activa válida
+    const { data, error } = await supabaseClient.auth.getSession();
+    const session = data.session;
+
+    const isLoginPage = document.getElementById("loginForm");
+    const isRegisterPage = document.getElementById("registerForm");
+
+    if (!session && !isLoginPage && !isRegisterPage) {
+        // Si NO hay sesión y NO está en login/registro, expulsar al login
+        window.location.href = "login.html";
+    } else if (session && (isLoginPage || isRegisterPage)) {
+        // Si SÍ hay sesión y está intentando entrar al login/registro, llevarlo al inicio
+        window.location.href = "index.html";
+    }
+}
+
+// Ejecutamos la comprobación nada más cargar el script
+checkSession();
 
 // ===============================
 // LOGIN
 // ===============================
-const form = document.getElementById("loginForm");
-
-if(form){
-    form.addEventListener("submit", async function(e){
+const loginForm = document.getElementById("loginForm");
+if (loginForm) {
+    loginForm.addEventListener("submit", async function (e) {
         e.preventDefault();
 
         const email = document.getElementById("email").value.trim();
@@ -25,35 +38,31 @@ if(form){
         errorP.style.color = "blue";
         errorP.textContent = "Iniciando sesión...";
 
-        // CONEXIÓN REAL A SUPABASE PARA EL LOGIN
         const { data, error } = await supabaseClient.auth.signInWithPassword({
             email: email,
             password: password
         });
 
-        // Si hay un error (contraseña mal, no existe, etc)
         if (error) {
             errorP.style.color = "red";
-            errorP.textContent = "Credenciales incorrectas";
+            errorP.textContent = "Credenciales incorrectas o usuario no encontrado";
             return;
         }
 
-        // Si el login es correcto:
-        // Guardamos la sesión en el navegador como lo tenías pensado
-        sessionStorage.setItem("user", "logged"); 
-        
-        // Redirigimos a la página de inicio
         window.location.href = "index.html";
     });
 }
 
 // ===============================
-// PROTEGER PÁGINAS
+// CERRAR SESIÓN (LOGOUT)
 // ===============================
-// Si estamos en cualquier página que no sea el login (o registro)
-if(!document.getElementById("loginForm") && !document.getElementById("registerForm")){
-    const user = sessionStorage.getItem("user");
-    if(!user){
+const btnLogout = document.getElementById("btnLogout");
+if (btnLogout) {
+    btnLogout.addEventListener("click", async (e) => {
+        e.preventDefault();
+        // Le decimos a Supabase que cierre la sesión
+        await supabaseClient.auth.signOut();
+        // Redirigimos al login
         window.location.href = "login.html";
-    }
+    });
 }
