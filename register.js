@@ -1,7 +1,6 @@
 // ===============================
 // CONFIGURACION SUPABASE
 // ===============================
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 const SUPABASE_URL = "https://lkxepxetmlelkjkvsoks.supabase.co";
 const SUPABASE_KEY = "sb_publishable_q9el2WqRhZwtfxXtTDvjNw_-FBHcCWK";
 
@@ -45,5 +44,4 @@ form.addEventListener("submit", async (e) => {
         
     }, 1500);
 });
-<script src="register.js"></script>
 
