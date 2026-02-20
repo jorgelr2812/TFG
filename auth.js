@@ -54,21 +54,19 @@ if (loginForm) {
 }
 
 // ===============================
-// CERRAR SESIÓN (LOGOUT)
+// CERRAR SESIÓN (LOGOUT) INFALIBLE
 // ===============================
-// ===============================
-// CERRAR SESIÓN (LOGOUT)
-// ===============================
-// Usamos DOMContentLoaded para que espere a que el HTML termine de cargar
-document.addEventListener("DOMContentLoaded", () => {
-    const btnLogout = document.getElementById("btnLogout");
-    if (btnLogout) {
-        btnLogout.addEventListener("click", async (e) => {
-            e.preventDefault();
-            // Le decimos a Supabase que cierre la sesión
-            await supabaseClient.auth.signOut();
-            // Redirigimos al login
-            window.location.href = "login.html";
-        });
+window.cerrarSesion = async function(e) {
+    e.preventDefault(); // Frena el #
+    
+    // Le decimos a Supabase que cierre la sesión
+    const { error } = await supabaseClient.auth.signOut();
+    
+    if (error) {
+        console.error("Error al cerrar sesión:", error.message);
+        alert("Hubo un problema al salir. Revisa la consola.");
+    } else {
+        // Redirigimos al login
+        window.location.href = "login.html";
     }
-});
+};
