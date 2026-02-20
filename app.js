@@ -62,7 +62,7 @@ if (formCitas) {
                 servicio: servicio, 
                 fecha: fecha,
                 hora: hora,
-                estado: 'Pendiente' // El estado inicial
+                estado: 'pendiente' // El estado inicial
             }]);
 
         if (!error) {
