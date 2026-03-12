@@ -30,6 +30,12 @@ header .logo {
     float: left;
     font-weight: bold;
 }
+
+/* logo image styling */
+header .logo img.logo-img {
+    height: 50px;
+    object-fit: contain;
+}
 header nav {
     float: left;
     margin-left: 30px;
