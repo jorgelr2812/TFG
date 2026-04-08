@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext({})
@@ -9,45 +9,46 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [role, setRole] = useState(null)
   const [loading, setLoading] = useState(true)
+  const initialized = useRef(false)
 
   useEffect(() => {
+    if (initialized.current) return
+    initialized.current = true
+
     const fetchRole = async (userId) => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('rol')
-        .eq('id', userId)
-        .single()
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('rol')
+          .eq('id', userId)
+          .single()
 
-      if (data && !error) {
-        setRole(data.rol)
-      } else {
-        setRole('cliente') // fallback si no existe perfil
+        if (data && !error) {
+          setRole(data.rol)
+        } else {
+          setRole('cliente')
+        }
+      } catch (err) {
+        console.error('Error fetching role:', err)
+        setRole('cliente')
       }
     }
 
-    // 1) Carga inicial garantizada: getSession siempre resuelve rápido
-    //    y asegura que loading=false aunque onAuthStateChange tarde.
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        setUser(session.user)
-        await fetchRole(session.user.id)
-      } else {
-        setUser(null)
-        setRole(null)
-      }
-      setLoading(false)
-    }
-    init()
+      // Timeout de seguridad: si en 3 segundos no hay respuesta de Supabase,
+      // desbloqueamos la web para evitar pantalla en blanco.
+      const timeoutId = setTimeout(() => {
+        if (loading) {
+          console.warn('Auth initialization timed out, defaulting to guest state.')
+          setLoading(false)
+        }
+      }, 3000)
 
-    // 2) Cambios posteriores (login / logout): ponemos loading=true
-    //    para evitar renders intermedios con role=null.
-    //    Ignoramos INITIAL_SESSION porque ya lo gestiona init().
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'INITIAL_SESSION') return
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) throw error
 
-        setLoading(true)
         if (session?.user) {
           setUser(session.user)
           await fetchRole(session.user.id)
@@ -55,11 +56,42 @@ export const AuthProvider = ({ children }) => {
           setUser(null)
           setRole(null)
         }
+      } catch (err) {
+        console.error('Auth check failed:', err)
+        setUser(null)
+        setRole(null)
+      } finally {
+        clearTimeout(timeoutId)
         setLoading(false)
+      }
+    }
+
+    init()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'INITIAL_SESSION') return
+
+        setLoading(true)
+        try {
+          if (session?.user) {
+            setUser(session.user)
+            await fetchRole(session.user.id)
+          } else {
+            setUser(null)
+            setRole(null)
+          }
+        } catch (err) {
+          console.error('Auth state change error:', err)
+        } finally {
+          setLoading(false)
+        }
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
   const value = {
