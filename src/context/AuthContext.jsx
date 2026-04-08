@@ -17,38 +17,31 @@ export const AuthProvider = ({ children }) => {
         .select('rol')
         .eq('id', userId)
         .single()
-        
+
       if (data && !error) {
         setRole(data.rol)
       } else {
-        setRole('cliente') // Si falla o no existe, cliente por defecto
+        setRole('cliente')
       }
     }
 
-    const fetchSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (session?.user) {
-        setUser(session.user)
-        await fetchRole(session.user.id)
-      } else {
-        setUser(null)
-        setRole(null)
+    // onAuthStateChange dispara INITIAL_SESSION al montar,
+    // SIGNED_IN al hacer login y SIGNED_OUT al hacer logout.
+    // Ponemos loading=true al inicio de cada cambio para evitar
+    // renders intermedios con user!=null pero role==null (pantalla en blanco).
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setLoading(true)
+        if (session?.user) {
+          setUser(session.user)
+          await fetchRole(session.user.id)
+        } else {
+          setUser(null)
+          setRole(null)
+        }
+        setLoading(false)
       }
-      setLoading(false)
-    }
-
-    fetchSession()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        setUser(session.user)
-        await fetchRole(session.user.id)
-      } else {
-        setUser(null)
-        setRole(null)
-      }
-    })
+    )
 
     return () => subscription.unsubscribe()
   }, [])
