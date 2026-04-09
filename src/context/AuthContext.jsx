@@ -23,16 +23,14 @@ export const AuthProvider = ({ children }) => {
 
     const fetchRole = async (userObj) => {
       const userId = userObj.id
-      console.log('--- STARTING ROLE FETCH FOR USER:', userId, '---')
       
       // 1. CARGA OPTIMISTA: Prioridad inmediata a user_metadata (rápido y local)
       let currentRole = userObj.user_metadata?.rol || userObj.user_metadata?.role || 'cliente'
+      
       setRole(currentRole)
-      console.log('--- ROLE SET OPTIMISTICALLY FROM METADATA:', currentRole, '---')
 
       // 2. SINCRONIZACIÓN EN SEGUNDO PLANO: Consultar tabla 'profiles'
       try {
-        console.log('--- SYNCING ROLE WITH PROFILES TABLE... ---')
         
         // Eliminamos el timeout para evitar fallos por lentitud de la red en la primera carga
         const { data: profileList, error: tableError } = await supabase
@@ -51,11 +49,9 @@ export const AuthProvider = ({ children }) => {
         }
 
         if (profileList) {
-          console.log('--- PROFILE DATA RECEIVED FROM DB: ---', profileList)
           const dbRole = profileList.rol || profileList.role
           
           if (dbRole) {
-            console.log('--- FINAL ROLE FROM DB:', dbRole, '---')
             setRole(dbRole)
           } else {
             console.warn('--- COLUMN "rol" OR "role" NOT FOUND IN PROFILE DATA ---')

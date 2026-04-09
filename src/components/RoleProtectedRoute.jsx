@@ -5,7 +5,7 @@ export const RoleProtectedRoute = ({ children, allowedRoles }) => {
   const { user, role, loading } = useAuth()
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Cargando permisos...</div>;
+    return <div className="min-h-screen flex items-center justify-center text-gray-900 dark:text-white">Cargando permisos...</div>;
   }
 
   if (!user) {
