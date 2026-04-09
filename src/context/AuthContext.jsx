@@ -21,34 +21,48 @@ export const AuthProvider = ({ children }) => {
     if (initialized.current) return
     initialized.current = true
 
-    const fetchRole = async (userId) => {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('rol')
-          .eq('id', userId)
-          .single()
+    const fetchRole = async (userObj) => {
+      const userId = userObj.id
+      let finalRole = null
 
-        if (data && !error) {
-          setRole(data.rol)
+      try {
+        console.log('--- FETCHING ROLE FROM DB ---')
+        
+        // 1. Intentar desde la tabla principal 'profiles'
+        const { data: profileList, error: tableError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .limit(1)
+
+        if (tableError) {
+          console.warn('Supabase Error 500/Table Error. Check RLS policies or Triggers in Supabase Dashboard:', tableError)
         } else {
-          setRole('cliente')
+          const profile = profileList?.[0]
+          finalRole = profile?.rol || profile?.role
         }
+
+        // 2. Si no hay rol en la tabla (o falló), intentar desde user_metadata (Rescate)
+        if (!finalRole) {
+          console.log('--- TRYING USER_METADATA FALLBACK ---')
+          finalRole = userObj.user_metadata?.rol || userObj.user_metadata?.role
+        }
+
+        // 3. Establecer rol o fallback final (cliente)
+        setRole(finalRole || 'cliente')
       } catch (err) {
-        console.error('Error fetching role:', err)
+        console.error('Critical Auth Exception:', err)
         setRole('cliente')
       }
     }
 
     const init = async () => {
-      // Timeout de seguridad: si en 3 segundos no hay respuesta de Supabase,
-      // desbloqueamos la web para evitar pantalla en blanco.
       const timeoutId = setTimeout(() => {
         if (loadingRef.current) {
-          console.warn('Auth initialization timed out, defaulting to guest state.')
+          console.warn('Auth initialization timed out, check Supabase status.')
           setLoading(false)
         }
-      }, 3000)
+      }, 5000) // Aumentamos a 5s para mayor margen
 
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
@@ -57,13 +71,13 @@ export const AuthProvider = ({ children }) => {
 
         if (session?.user) {
           setUser(session.user)
-          await fetchRole(session.user.id)
+          await fetchRole(session.user)
         } else {
           setUser(null)
           setRole(null)
         }
       } catch (err) {
-        console.error('Auth check failed:', err)
+        console.error('Session init failed:', err)
         setUser(null)
         setRole(null)
       } finally {
@@ -82,7 +96,7 @@ export const AuthProvider = ({ children }) => {
         try {
           if (session?.user) {
             setUser(session.user)
-            await fetchRole(session.user.id)
+            await fetchRole(session.user)
           } else {
             setUser(null)
             setRole(null)
