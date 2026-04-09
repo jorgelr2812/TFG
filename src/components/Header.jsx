@@ -7,6 +7,8 @@ export default function Header() {
   const { user, role, loading } = useAuth()
   const navigate = useNavigate()
 
+  console.log('--- HEADER RENDERED: user=', !!user, 'role=', role, 'loading=', loading, '---')
+
   const handleLogout = async (e) => {
     e.preventDefault()
     try {

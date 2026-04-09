@@ -12,9 +12,9 @@ export const RoleProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace />
   }
 
-  // Si el usuario tiene un rol que NO está en la lista de permitidos
-  if (role && !allowedRoles.includes(role)) {
-    return <Navigate to="/" replace /> // Redirigir al inicio normal si no tiene permisos
+  // Si el usuario no tiene rol cargado o no está en la lista de permitidos
+  if (!role || !allowedRoles.includes(role)) {
+    return <Navigate to="/" replace />
   }
 
   return children

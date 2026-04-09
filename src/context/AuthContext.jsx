@@ -23,47 +23,46 @@ export const AuthProvider = ({ children }) => {
 
     const fetchRole = async (userObj) => {
       const userId = userObj.id
+      console.log('--- STARTING ROLE FETCH FOR USER:', userId, '---')
       
       // 1. CARGA OPTIMISTA: Prioridad inmediata a user_metadata (rápido y local)
       let currentRole = userObj.user_metadata?.rol || userObj.user_metadata?.role || 'cliente'
       setRole(currentRole)
       console.log('--- ROLE SET OPTIMISTICALLY FROM METADATA:', currentRole, '---')
 
-      // 2. SINCRONIZACIÓN EN SEGUNDO PLANO: Consultar tabla 'profiles' con timeout
+      // 2. SINCRONIZACIÓN EN SEGUNDO PLANO: Consultar tabla 'profiles'
       try {
-        console.log('--- SYNCING ROLE WITH PROFILES TABLE (BACKGROUND) ---')
+        console.log('--- SYNCING ROLE WITH PROFILES TABLE... ---')
         
-        // Usamos una carrera con timeout para que la tabla lenta/rota no bloquee la app
-        const fetchPromise = supabase
+        // Eliminamos el timeout para evitar fallos por lentitud de la red en la primera carga
+        const { data: profileList, error: tableError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
-          .limit(1)
-
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('DB_TIMEOUT')), 2500)
-        )
-
-        const { data: profileList, error: tableError } = await Promise.race([
-          fetchPromise,
-          timeoutPromise
-        ])
+          .single() // Usamos single para obtener uno solo directamente
 
         if (tableError) {
-          console.warn('Profiles table background sync failed:', tableError)
-        } else if (profileList?.[0]) {
-          const dbRole = profileList[0].rol || profileList[0].role
-          if (dbRole && dbRole !== currentRole) {
-            console.log('--- ROLE UPDATED FROM TABLE:', dbRole, '---')
+          console.error('--- ERROR FETCHING PROFILE TABLE: ---', tableError.message, tableError.details)
+          // Si el error es 406 o similar, podría ser RLS o que no existe la fila
+          if (tableError.code === 'PGRST116') {
+            console.warn('Profile row not found for this user in "profiles" table.')
+          }
+          return
+        }
+
+        if (profileList) {
+          console.log('--- PROFILE DATA RECEIVED FROM DB: ---', profileList)
+          const dbRole = profileList.rol || profileList.role
+          
+          if (dbRole) {
+            console.log('--- FINAL ROLE FROM DB:', dbRole, '---')
             setRole(dbRole)
+          } else {
+            console.warn('--- COLUMN "rol" OR "role" NOT FOUND IN PROFILE DATA ---')
           }
         }
       } catch (err) {
-        if (err.message === 'DB_TIMEOUT') {
-          console.warn('Profiles table is hanging (Timeout). Using metadata role.')
-        } else {
-          console.error('Background role sync exception:', err)
-        }
+        console.error('--- UNEXPECTED ROLE SYNC EXCEPTION: ---', err)
       }
     }
 
@@ -82,7 +81,8 @@ export const AuthProvider = ({ children }) => {
 
         if (session?.user) {
           setUser(session.user)
-          await fetchRole(session.user)
+          // No bloqueamos el inicio de la app esperando a la DB lenta
+          fetchRole(session.user)
         } else {
           setUser(null)
           setRole(null)
@@ -103,11 +103,10 @@ export const AuthProvider = ({ children }) => {
       async (event, session) => {
         if (event === 'INITIAL_SESSION') return
 
-        setLoading(true)
         try {
           if (session?.user) {
             setUser(session.user)
-            await fetchRole(session.user)
+            fetchRole(session.user)
           } else {
             setUser(null)
             setRole(null)
