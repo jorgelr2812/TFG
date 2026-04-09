@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext({})
 
-const useAuth = () => useContext(AuthContext)
+export const useAuth = () => useContext(AuthContext)
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
@@ -137,4 +137,4 @@ export const AuthProvider = ({ children }) => {
   )
 }
 
-export { useAuth }
+

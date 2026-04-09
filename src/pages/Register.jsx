@@ -14,7 +14,16 @@ export default function Register() {
     setLoading(true)
     setMsg({ text: 'Creando cuenta...', type: 'info' })
 
-    const { error } = await supabase.auth.signUp({ email: email.trim(), password: password.trim() })
+    const { error } = await supabase.auth.signUp({ 
+      email: email.trim(), 
+      password: password.trim(),
+      options: {
+        data: {
+          rol: 'cliente',
+          email: email.trim() // Esto asegura que el campo de email/gmail se rellene si hay triggers
+        }
+      }
+    })
 
     if (error) {
       setMsg({ text: error.message, type: 'error' })
