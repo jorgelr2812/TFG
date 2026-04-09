@@ -16,8 +16,8 @@ export default function Header() {
     } finally {
       localStorage.clear()
       sessionStorage.clear()
-      // Recarga completa para limpiar estado de React y locks de Supabase
-      window.location.href = '/login'
+      // Recarga completa a la raíz para evitar fallos de 'NotFound' en el servidor
+      window.location.href = '/'
     }
   }
 
