@@ -4,13 +4,21 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
 export default function Header() {
-  const { user, role } = useAuth()
+  const { user, role, loading } = useAuth()
   const navigate = useNavigate()
 
   const handleLogout = async (e) => {
     e.preventDefault()
-    await supabase.auth.signOut()
-    navigate('/login')
+    try {
+      await supabase.auth.signOut()
+    } catch (err) {
+      console.error('Logout error:', err)
+    } finally {
+      localStorage.clear()
+      sessionStorage.clear()
+      // Recarga completa para limpiar estado de React y locks de Supabase
+      window.location.href = '/login'
+    }
   }
 
   return (
@@ -27,13 +35,13 @@ export default function Header() {
           <Link to="/gallery" className="hover:text-brand-accent transition-colors">Galería</Link>
           <Link to="/contact" className="hover:text-brand-accent transition-colors">Contacto</Link>
           
-          {/* Enlaces exclusivos por rol */}
-          {role === 'jefe' && (
+          {/* Enlaces exclusivos por rol - Solo si está logeado */}
+          {user && role === 'jefe' && (
             <Link to="/jefe" className="text-purple-600 hover:text-purple-700 font-semibold flex items-center gap-1">
               👑 Panel Jefe
             </Link>
           )}
-          {(role === 'peluquero' || role === 'jefe') && (
+          {user && (role === 'peluquero' || role === 'jefe') && (
             <Link to="/peluquero" className="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1">
               📅 Agenda
             </Link>

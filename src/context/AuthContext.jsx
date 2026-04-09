@@ -9,7 +9,13 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [role, setRole] = useState(null)
   const [loading, setLoading] = useState(true)
+  const loadingRef = useRef(true) // Ref to keep track of loading state for the timeout
   const initialized = useRef(false)
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    loadingRef.current = loading
+  }, [loading])
 
   useEffect(() => {
     if (initialized.current) return
@@ -38,7 +44,7 @@ export const AuthProvider = ({ children }) => {
       // Timeout de seguridad: si en 3 segundos no hay respuesta de Supabase,
       // desbloqueamos la web para evitar pantalla en blanco.
       const timeoutId = setTimeout(() => {
-        if (loading) {
+        if (loadingRef.current) {
           console.warn('Auth initialization timed out, defaulting to guest state.')
           setLoading(false)
         }
