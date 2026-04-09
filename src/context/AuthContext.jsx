@@ -23,36 +23,47 @@ export const AuthProvider = ({ children }) => {
 
     const fetchRole = async (userObj) => {
       const userId = userObj.id
-      let finalRole = null
+      
+      // 1. CARGA OPTIMISTA: Prioridad inmediata a user_metadata (rápido y local)
+      let currentRole = userObj.user_metadata?.rol || userObj.user_metadata?.role || 'cliente'
+      setRole(currentRole)
+      console.log('--- ROLE SET OPTIMISTICALLY FROM METADATA:', currentRole, '---')
 
+      // 2. SINCRONIZACIÓN EN SEGUNDO PLANO: Consultar tabla 'profiles' con timeout
       try {
-        console.log('--- FETCHING ROLE FROM DB ---')
+        console.log('--- SYNCING ROLE WITH PROFILES TABLE (BACKGROUND) ---')
         
-        // 1. Intentar desde la tabla principal 'profiles'
-        const { data: profileList, error: tableError } = await supabase
+        // Usamos una carrera con timeout para que la tabla lenta/rota no bloquee la app
+        const fetchPromise = supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
           .limit(1)
 
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('DB_TIMEOUT')), 2500)
+        )
+
+        const { data: profileList, error: tableError } = await Promise.race([
+          fetchPromise,
+          timeoutPromise
+        ])
+
         if (tableError) {
-          console.warn('Supabase Error 500/Table Error. Check RLS policies or Triggers in Supabase Dashboard:', tableError)
-        } else {
-          const profile = profileList?.[0]
-          finalRole = profile?.rol || profile?.role
+          console.warn('Profiles table background sync failed:', tableError)
+        } else if (profileList?.[0]) {
+          const dbRole = profileList[0].rol || profileList[0].role
+          if (dbRole && dbRole !== currentRole) {
+            console.log('--- ROLE UPDATED FROM TABLE:', dbRole, '---')
+            setRole(dbRole)
+          }
         }
-
-        // 2. Si no hay rol en la tabla (o falló), intentar desde user_metadata (Rescate)
-        if (!finalRole) {
-          console.log('--- TRYING USER_METADATA FALLBACK ---')
-          finalRole = userObj.user_metadata?.rol || userObj.user_metadata?.role
-        }
-
-        // 3. Establecer rol o fallback final (cliente)
-        setRole(finalRole || 'cliente')
       } catch (err) {
-        console.error('Critical Auth Exception:', err)
-        setRole('cliente')
+        if (err.message === 'DB_TIMEOUT') {
+          console.warn('Profiles table is hanging (Timeout). Using metadata role.')
+        } else {
+          console.error('Background role sync exception:', err)
+        }
       }
     }
 
