@@ -1,5 +1,6 @@
 import React from 'react'
 
+// Captura errores en la UI y muestra una pantalla de fallback.
 export class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props)

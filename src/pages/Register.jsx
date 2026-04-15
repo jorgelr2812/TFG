@@ -1,37 +1,31 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
+import { register as registerUser } from '../lib/api'
 import { useForm } from 'react-hook-form'
 
+// Página de registro para crear nuevas cuentas de cliente.
 export default function Register() {
   const [msg, setMsg] = useState({ text: '', type: '' })
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const { setAuth } = useAuth()
   const { register, handleSubmit, formState: { errors } } = useForm()
 
   const onSubmit = async (data) => {
     setLoading(true)
     setMsg({ text: 'Creando cuenta...', type: 'info' })
 
-    const { error } = await supabase.auth.signUp({ 
-      email: data.email.trim(), 
-      password: data.password.trim(),
-      options: {
-        data: {
-          rol: 'cliente',
-          email: data.email.trim()
-        }
-      }
-    })
-
-    if (error) {
-      setMsg({ text: error.message, type: 'error' })
-      setLoading(false)
-    } else {
+    try {
+      const response = await registerUser(data.email.trim(), data.password.trim())
+      setAuth(response.user, response.token)
       setMsg({ text: 'Cuenta creada correctamente. Entrando...', type: 'success' })
       setTimeout(() => {
         navigate('/')
       }, 1500)
+    } catch (error) {
+      setMsg({ text: error.message || 'Error al crear la cuenta', type: 'error' })
+      setLoading(false)
     }
   }
 

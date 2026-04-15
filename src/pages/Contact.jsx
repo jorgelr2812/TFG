@@ -1,6 +1,7 @@
 import React from 'react'
 import { MapPin, Phone, Clock, Mail } from 'lucide-react'
 
+// Página de contacto con información y mapa integrado.
 export default function Contact() {
   return (
     <div className="container mx-auto px-4 py-16 max-w-4xl">

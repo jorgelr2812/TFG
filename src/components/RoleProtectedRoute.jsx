@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
+// Controla acceso según el rol del usuario.
 export const RoleProtectedRoute = ({ children, allowedRoles }) => {
   const { user, role, loading } = useAuth()
 

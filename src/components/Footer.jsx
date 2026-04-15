@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin, Phone, Clock } from 'lucide-react'
 
+// Pie de página con enlaces rápidos y datos de contacto.
 export default function Footer() {
   return (
     <footer className="bg-brand-dark dark:bg-gray-900 text-white py-12 mt-auto">
@@ -14,6 +15,7 @@ export default function Footer() {
           <h4 className="text-xl font-bold mb-4">Enlaces Rápidos</h4>
           <ul className="space-y-2 text-gray-300 dark:text-gray-200">
             <li><Link to="/gallery" className="hover:text-brand-accent transition-colors">Galería</Link></li>
+            <li><Link to="/store" className="hover:text-brand-accent transition-colors">Tienda</Link></li>
             <li><Link to="/contact" className="hover:text-brand-accent transition-colors">Contacto</Link></li>
             <li><a href="/#servicios" className="hover:text-brand-accent transition-colors">Servicios</a></li>
           </ul>

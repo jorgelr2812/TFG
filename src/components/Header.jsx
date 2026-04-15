@@ -2,27 +2,20 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
-import { supabase } from '../lib/supabase'
 import { Menu, X, Moon, Sun } from 'lucide-react'
 
+// Cabecera con navegación y lógica de sesión.
+
 export default function Header() {
-  const { user, role, loading } = useAuth()
+  const { user, role, clearAuth } = useAuth()
   const { darkMode, toggleDarkMode } = useTheme()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
 
   const handleLogout = async (e) => {
     e.preventDefault()
-    try {
-      await supabase.auth.signOut()
-    } catch (err) {
-      console.error('Logout error:', err)
-    } finally {
-      localStorage.clear()
-      sessionStorage.clear()
-      // Recarga completa a la raíz para evitar fallos de 'NotFound' en el servidor
-      window.location.href = '/'
-    }
+    clearAuth()
+    navigate('/')
   }
 
   return (
@@ -55,6 +48,7 @@ export default function Header() {
           <Link to="/" className="hover:text-brand-accent transition-colors">Inicio</Link>
           <a href="/#servicios" className="hover:text-brand-accent transition-colors">Servicios</a>
           <Link to="/gallery" className="hover:text-brand-accent transition-colors">Galería</Link>
+          <Link to="/store" className="hover:text-brand-accent transition-colors">Tienda</Link>
           <Link to="/contact" className="hover:text-brand-accent transition-colors">Contacto</Link>
           
           {/* Enlaces exclusivos por rol - Solo si está logeado */}
@@ -90,6 +84,7 @@ export default function Header() {
               <Link to="/" className="text-gray-900 dark-mobile-link hover:text-brand-accent transition-colors" onClick={() => setMenuOpen(false)}>Inicio</Link>
               <a href="/#servicios" className="text-gray-900 dark-mobile-link hover:text-brand-accent transition-colors" onClick={() => setMenuOpen(false)}>Servicios</a>
               <Link to="/gallery" className="text-gray-900 dark-mobile-link hover:text-brand-accent transition-colors" onClick={() => setMenuOpen(false)}>Galería</Link>
+              <Link to="/store" className="text-gray-900 dark-mobile-link hover:text-brand-accent transition-colors" onClick={() => setMenuOpen(false)}>Tienda</Link>
               <Link to="/contact" className="text-gray-900 dark-mobile-link hover:text-brand-accent transition-colors" onClick={() => setMenuOpen(false)}>Contacto</Link>
               
               {user && role === 'jefe' && (

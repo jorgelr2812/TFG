@@ -1,45 +1,39 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabase'
+import { createSuggestion, createAppointment } from '../lib/api'
 import { useForm } from 'react-hook-form'
 import { Scissors, Palette, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+// Página principal con formulario de sugerencias y cita.
 export default function Home() {
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const [sugerenciaTexto, setSugerenciaTexto] = useState('')
   const { register, handleSubmit, formState: { errors }, reset } = useForm()
 
   const handleSugerencia = async (e) => {
     e.preventDefault()
-    if (!user) return toast.error("Debes iniciar sesión para enviar una sugerencia.")
-    
-    const { error } = await supabase.from('sugerencias').insert([{ usuario_id: user.id, mensaje: sugerenciaTexto }])
-    if (!error) {
-      toast.success("¡Sugerencia enviada correctamente!")
+    if (!user) return toast.error('Debes iniciar sesión para enviar una sugerencia.')
+
+    try {
+      await createSuggestion(sugerenciaTexto, token)
+      toast.success('¡Sugerencia enviada correctamente!')
       setSugerenciaTexto('')
-    } else {
-      toast.error("Error al enviar: " + error.message)
+    } catch (err) {
+      toast.error('Error al enviar: ' + err.message)
     }
   }
 
   const onSubmitCita = async (data) => {
-    if (!user) return toast.error("Debes iniciar sesión para pedir una cita.")
+    if (!user) return toast.error('Debes iniciar sesión para pedir una cita.')
 
-    const { error } = await supabase.from('citas').insert([{ 
-      user_id: user.id, 
-      servicio: data.servicio, 
-      fecha: data.fecha,
-      hora: data.hora,
-      estado: 'pendiente'
-    }])
-
-    if (!error) {
-      toast.success("¡Cita solicitada correctamente!")
+    try {
+      await createAppointment({ servicio: data.servicio, fecha: data.fecha, hora: data.hora }, token)
+      toast.success('¡Cita solicitada correctamente!')
       reset()
-    } else {
-      toast.error("Error al solicitar cita: " + error.message)
+    } catch (err) {
+      toast.error('Error al solicitar cita: ' + err.message)
     }
   }
 
@@ -48,7 +42,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative bg-gradient-to-r from-brand-dark to-gray-800 dark:from-gray-900 dark:to-black text-white py-32 px-4 shadow-inner overflow-hidden">
         <div className="absolute inset-0 opacity-20">
-           <img src="/ChatGPT Image 16 mar 2026, 16_44_49.png" alt="Background" className="w-full h-full object-cover" />
+           <img src="/galeria-1.png" alt="Fondo de la peluquería" className="w-full h-full object-cover" />
         </div>
         <div className="container mx-auto relative z-10 flex flex-col items-center text-center">
           <h1 className="text-5xl md:text-7xl font-extrabold mb-6 tracking-tight">Bienvenido a su estilo</h1>

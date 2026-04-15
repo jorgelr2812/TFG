@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 
+// Página 404 para rutas no encontradas.
 export default function NotFound() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4">

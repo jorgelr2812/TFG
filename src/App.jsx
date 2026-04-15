@@ -10,12 +10,15 @@ import Skeleton from 'react-loading-skeleton'
 import { Toaster } from 'react-hot-toast'
 import 'react-loading-skeleton/dist/skeleton.css'
 
+// Componente principal que monta las rutas y los proveedores de contexto.
+
 // Lazy load pages
 const Home = React.lazy(() => import('./pages/Home'))
 const Login = React.lazy(() => import('./pages/Login'))
 const Register = React.lazy(() => import('./pages/Register'))
 const Gallery = React.lazy(() => import('./pages/Gallery'))
 const Contact = React.lazy(() => import('./pages/Contact'))
+const Store = React.lazy(() => import('./pages/Store'))
 const JefeDashboard = React.lazy(() => import('./pages/JefeDashboard'))
 const PeluqueroDashboard = React.lazy(() => import('./pages/PeluqueroDashboard'))
 const NotFound = React.lazy(() => import('./pages/NotFound'))
@@ -44,6 +47,7 @@ function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/gallery" element={<Gallery />} />
+                  <Route path="/store" element={<Store />} />
                   <Route path="/contact" element={<Contact />} />
                   
                   {/* Rutas de Roles */}

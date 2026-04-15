@@ -1,66 +1,82 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { BarChart3, Users, DollarSign, CalendarCheck } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { BarChart3, Users, DollarSign, CalendarCheck, ShoppingCart } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
+import { getProducts, getOrders, computeShopStats } from '../lib/shop';
+import { getAppointments, getSuggestions } from '../lib/api';
+
+// Panel de jefe con estadísticas de citas y tienda.
+
+// Panel de jefe con estadísticas de citas y tienda.
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function JefeDashboard() {
-  const { user } = useAuth();
+  const { token } = useAuth();
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState(null);
+  const [salesData, setSalesData] = useState(null);
+  const [shopStats, setShopStats] = useState(null);
 
   useEffect(() => {
     const fetchStats = async () => {
-      // Fetch citas count
-      const { count: citasCount } = await supabase
-        .from('citas')
-        .select('*', { count: 'exact', head: true });
+      try {
+        const appointmentsResponse = await getAppointments(token)
+        const suggestionsResponse = await getSuggestions(token)
+        const citasData = appointmentsResponse.appointments || []
+        const suggestionsCount = suggestionsResponse.suggestions?.length || 0
 
-      // Fetch suggestions count
-      const { count: suggestionsCount } = await supabase
-        .from('sugerencias')
-        .select('*', { count: 'exact', head: true });
+        const monthlyData = {}
+        citasData.forEach(cita => {
+          const month = new Date(cita.fecha).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })
+          monthlyData[month] = (monthlyData[month] || 0) + 1
+        })
 
-      // Fetch citas by month for chart
-      const { data: citasData } = await supabase
-        .from('citas')
-        .select('fecha')
-        .order('fecha', { ascending: true });
+        const products = getProducts()
+        const orders = getOrders()
+        const shopStats = computeShopStats(orders, products)
 
-      // Process chart data
-      const monthlyData = {};
-      citasData?.forEach(cita => {
-        const month = new Date(cita.fecha).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
-        monthlyData[month] = (monthlyData[month] || 0) + 1;
-      });
+        setChartData({
+          labels: Object.keys(monthlyData),
+          datasets: [{
+            label: 'Citas',
+            data: Object.values(monthlyData),
+            backgroundColor: 'rgba(59, 130, 246, 0.5)',
+            borderColor: 'rgba(59, 130, 246, 1)',
+            borderWidth: 1
+          }]
+        })
 
-      setChartData({
-        labels: Object.keys(monthlyData),
-        datasets: [{
-          label: 'Citas',
-          data: Object.values(monthlyData),
-          backgroundColor: 'rgba(59, 130, 246, 0.5)',
-          borderColor: 'rgba(59, 130, 246, 1)',
-          borderWidth: 1
-        }]
-      });
+        setSalesData({
+          labels: Object.keys(shopStats.monthlyRevenue),
+          datasets: [{
+            label: 'Ingresos tienda',
+            data: Object.values(shopStats.monthlyRevenue),
+            backgroundColor: 'rgba(16, 185, 129, 0.5)',
+            borderColor: 'rgba(16, 185, 129, 1)',
+            borderWidth: 1
+          }]
+        })
 
-      setStats([
-        { name: 'Citas Totales', value: citasCount || 0, icon: CalendarCheck, color: 'text-purple-600', bg: 'bg-purple-100' },
-        { name: 'Sugerencias Recibidas', value: suggestionsCount || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-100' },
-        { name: 'Dinero Generado (Mes)', value: '€4,250', icon: DollarSign, color: 'text-green-600', bg: 'bg-green-100' },
-        { name: 'Crecimiento', value: '+14%', icon: BarChart3, color: 'text-brand-accent', bg: 'bg-blue-50' },
-      ]);
-      setLoading(false);
-    };
+        setShopStats(shopStats)
+        setStats([
+          { name: 'Citas Totales', value: citasData.length, icon: CalendarCheck, color: 'text-purple-600', bg: 'bg-purple-100' },
+          { name: 'Sugerencias Recibidas', value: suggestionsCount, icon: Users, color: 'text-blue-600', bg: 'bg-blue-100' },
+          { name: 'Pedidos de Tienda', value: shopStats.totalOrders, icon: ShoppingCart, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+          { name: 'Ingresos Tienda', value: shopStats.totalRevenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }), icon: DollarSign, color: 'text-green-600', bg: 'bg-green-100' },
+        ])
+      } catch (err) {
+        console.error('Fetch dashboard stats error:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-    fetchStats();
-  }, []);
+    fetchStats()
+  }, [token])
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -95,10 +111,15 @@ export default function JefeDashboard() {
         )}
       </div>
 
-      {/* Zonas adicionales para el futuro */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_0.95fr] gap-8">
         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 dark-card">
-          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark-heading">Citas por Mes</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark-heading">Citas por Mes</h3>
+              <p className="text-sm text-gray-500 dark-text">Evolución mensual de las reservas en tu salón.</p>
+            </div>
+            <span className="text-sm font-semibold text-brand-accent">Datos actualizados</span>
+          </div>
           {chartData ? (
             <Bar 
               data={chartData} 
@@ -114,8 +135,72 @@ export default function JefeDashboard() {
             <Skeleton height={200} />
           )}
         </div>
-        <div className="bg-gray-50 h-64 flex items-center justify-center border-dashed border-2 border-gray-300 dark-placeholder rounded-lg">
-          <p className="text-gray-500 dark-text font-medium">Lista de Empleados (Espacio Reservado)</p>
+
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 dark-card">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark-heading">Ventas de la tienda</h3>
+                <p className="text-sm text-gray-500 dark-text">Resumen de ingresos y productos más vendidos.</p>
+              </div>
+              <ShoppingCart className="w-6 h-6 text-brand-accent" />
+            </div>
+            {salesData ? (
+              <Bar 
+                data={salesData} 
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { position: 'top' },
+                    title: { display: false }
+                  }
+                }}
+              />
+            ) : (
+              <Skeleton height={200} />
+            )}
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 dark-card">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark-heading">Productos con bajo stock</h3>
+            {shopStats?.lowStock?.length ? (
+              <div className="space-y-3">
+                {shopStats.lowStock.map((product) => (
+                  <div key={product.id} className="rounded-3xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">{product.name}</p>
+                        <p className="text-sm text-gray-500 dark:text-slate-400">Quedan solo {product.stock} unidades</p>
+                      </div>
+                      <span className="text-sm font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full">Reponer</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 dark-text">No hay productos urgentes para reponer.</p>
+            )}
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 dark-card">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark-heading">Más vendidos</h3>
+            {shopStats?.bestSellers?.length ? (
+              <div className="space-y-3">
+                {shopStats.bestSellers.map((product, idx) => (
+                  <div key={product.name} className="rounded-3xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">{idx + 1}. {product.name}</p>
+                        <p className="text-sm text-gray-500 dark:text-slate-400">Vendidos: {product.quantity} unidades</p>
+                      </div>
+                      <span className="text-sm font-semibold text-brand-accent">{product.revenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 dark-text">No hay datos de ventas todavía.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

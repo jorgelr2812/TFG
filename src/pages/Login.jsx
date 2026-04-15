@@ -1,26 +1,29 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
+import { login } from '../lib/api'
 
+// Página de inicio de sesión para usuarios registrados.
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const { setAuth } = useAuth()
 
   const handleLogin = async (e) => {
     e.preventDefault()
     setLoading(true)
     setErrorMsg('')
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (error) {
-      setErrorMsg("Credenciales incorrectas o usuario no encontrado.")
-      setLoading(false)
-    } else {
+    try {
+      const response = await login(email, password)
+      setAuth(response.user, response.token)
       navigate('/')
+    } catch (err) {
+      setErrorMsg(err.message || 'Credenciales incorrectas o usuario no encontrado.')
+      setLoading(false)
     }
   }
 
