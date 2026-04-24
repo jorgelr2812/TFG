@@ -6,17 +6,23 @@ const getAuthHeaders = (token) => {
 }
 
 const apiFetch = async (path, options = {}) => {
+  const { headers, ...restOptions } = options
+  
   // Wrapper centralizado para todas las llamadas a la API.
   const response = await fetch(`${API_BASE}${path}`, {
+    ...restOptions,
     headers: {
       'Content-Type': 'application/json',
-      ...options.headers
-    },
-    ...options
+      ...headers
+    }
   })
 
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
+    if (data.errors && Array.isArray(data.errors)) {
+      const messages = data.errors.map(err => err.msg || err.message).join('. ')
+      throw new Error(messages)
+    }
     const error = data.error || data.message || 'Error en la petición'
     throw new Error(error)
   }
@@ -59,11 +65,11 @@ export const getAppointments = async (token) => {
   })
 }
 
-export const updateAppointmentStatus = async (id, status, token) => {
+export const updateAppointmentStatus = async (id, status, token, precio = undefined) => {
   return apiFetch(`/api/appointments/${id}/status`, {
     method: 'PUT',
     headers: getAuthHeaders(token),
-    body: JSON.stringify({ estado: status })
+    body: JSON.stringify({ estado: status, precio })
   })
 }
 
@@ -88,3 +94,10 @@ export const getStatus = async (token) => {
     headers: getAuthHeaders(token)
   })
 }
+
+export const getStoreProducts = async () => {
+  return apiFetch('/api/products', {
+    method: 'GET'
+  })
+}
+

@@ -13,6 +13,7 @@ import appointmentsRouter from './routes/appointments.js';
 import suggestionsRouter from './routes/suggestions.js';
 import authRouter from './routes/auth.js';
 import usersRouter from './routes/users.js';
+import productsRouter from './routes/products.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -43,6 +44,7 @@ app.use('/api/appointments', appointmentsRouter);
 app.use('/api/suggestions', suggestionsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/products', productsRouter);
 
 // Servir los archivos estáticos generados por React/Vite.
 app.use(express.static(path.join(__dirname, 'dist')));

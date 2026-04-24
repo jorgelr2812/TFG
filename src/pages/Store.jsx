@@ -2,20 +2,36 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
-import { ShoppingCart, ChevronRight, ArrowUpRight, Package, ShoppingBag, CheckCircle2 } from 'lucide-react'
+import { ShoppingCart, ChevronRight, ArrowUpRight, Package, ShoppingBag, CheckCircle2, Loader2 } from 'lucide-react'
 import { getProducts, saveProducts, getCart, saveCart, addOrder } from '../lib/shop'
+import { getStoreProducts } from '../lib/api'
 
 // Página de tienda con carrito y gestión de pedidos local.
 export default function Store() {
-  const { user } = useAuth()
+  const { user, role } = useAuth()
   const navigate = useNavigate()
   const [products, setProducts] = useState([])
   const [cart, setCart] = useState([])
   const [processing, setProcessing] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setProducts(getProducts())
-    setCart(getCart())
+    const fetchInitialData = async () => {
+      try {
+        const { products: dbProducts } = await getStoreProducts()
+        setProducts(dbProducts)
+        // Opcional: Actualizar localStorage con la versión de la DB
+        saveProducts(dbProducts)
+      } catch (err) {
+        console.error('Error fetching products:', err)
+        toast.error('No se pudieron cargar los productos de la base de datos.')
+      } finally {
+        setLoading(false)
+      }
+      setCart(getCart())
+    }
+
+    fetchInitialData()
   }, [])
 
   useEffect(() => {
@@ -121,111 +137,149 @@ export default function Store() {
             Compra los mejores productos de peluquería directamente desde el negocio. Elige, añade al carrito y confirma tu pedido en segundos.
           </p>
         </div>
-        <div className="rounded-3xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-lg">
-          <div className="flex items-center gap-3 mb-3 text-brand-dark dark:text-white">
-            <ShoppingCart className="w-5 h-5" /> Carrito
+        <div className="card shadow-lg p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-brand-accent/10 rounded-lg text-brand-accent">
+               <ShoppingCart className="w-5 h-5" />
+            </div>
+            <span className="font-bold">Resumen rápido</span>
           </div>
-          <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-4">
-            <div className="flex justify-between"><span>Productos</span><span>{cartQuantity}</span></div>
-            <div className="flex justify-between"><span>Subtotal</span><span>{totalPrice.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span></div>
+          <div className="space-y-2 text-sm mb-6">
+            <div className="flex justify-between font-medium text-gray-500"><span>Artículos</span><span>{cartQuantity}</span></div>
+            <div className="flex justify-between font-black text-lg"><span>Total</span><span className="text-brand-accent">{totalPrice.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span></div>
           </div>
           <button
             onClick={handleCheckout}
             disabled={processing || !cartItems.length}
-            className="btn-primary w-full text-center"
+            className="btn-primary w-full py-3 text-sm"
           >
-            {processing ? 'Procesando...' : 'Finalizar compra'}
+            {processing ? '...' : 'Checkout'}
           </button>
         </div>
       </div>
 
       <div className="grid lg:grid-cols-[1.4fr_0.6fr] gap-8">
         <section>
-          <div className="grid sm:grid-cols-2 gap-6">
-            {products.map(product => (
-              <article key={product.id} className="card group overflow-hidden relative">
-                <div className="overflow-hidden rounded-3xl h-56 mb-4">
-                  <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-xl font-semibold text-brand-dark dark:text-white">{product.name}</h2>
-                    <span className="text-lg font-bold text-brand-accent">{product.price.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span>
+          {loading ? (
+            <div className="flex flex-col items-center justify-center p-20 text-gray-500">
+              <Loader2 className="w-12 h-12 animate-spin mb-4 text-brand-accent" />
+              <p>Cargando productos de la base de datos...</p>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center p-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+              <Package className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <h2 className="text-xl font-semibold mb-2">No hay productos disponibles</h2>
+              <p className="text-gray-500">Vuelve más tarde para ver nuestras novedades.</p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 gap-6">
+              {products.map(product => (
+                <article key={product.id} className="card group overflow-hidden relative">
+                  <div className="overflow-hidden rounded-3xl h-56 mb-4">
+                    {product.image ? (
+                      <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    ) : (
+                      <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
+                        <ShoppingBag className="w-12 h-12" />
+                      </div>
+                    )}
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-slate-300 leading-relaxed">{product.description}</p>
-                  <div className="flex items-center justify-between gap-4">
-                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${product.stock > 5 ? 'bg-emerald-100 text-emerald-700' : product.stock > 0 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
-                      {product.stock > 0 ? `${product.stock} en stock` : 'Agotado'}
-                    </span>
-                    <button
-                      onClick={() => handleAddToCart(product)}
-                      disabled={product.stock <= 0}
-                      className="inline-flex items-center gap-2 rounded-full bg-brand-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-slate-400"
-                    >
-                      <ArrowUpRight className="w-4 h-4" /> Añadir
-                    </button>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <h2 className="text-xl font-semibold text-brand-dark dark:text-white uppercase line-clamp-1">{product.name}</h2>
+                      <span className="text-lg font-bold text-brand-accent whitespace-nowrap">{product.price.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-slate-300 leading-relaxed line-clamp-2">{product.description}</p>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${product.stock > 5 ? 'bg-emerald-100 text-emerald-700' : product.stock > 0 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+                        {product.stock > 0 ? `${product.stock} en stock` : 'Agotado'}
+                      </span>
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        disabled={product.stock <= 0}
+                        className="inline-flex items-center gap-2 rounded-full bg-brand-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-slate-400"
+                      >
+                        <ArrowUpRight className="w-4 h-4" /> Añadir
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         <aside className="space-y-6">
-          <div className="rounded-3xl bg-slate-950/95 border border-white/10 p-6 shadow-2xl shadow-slate-950/20 text-white">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm uppercase tracking-[0.35em] text-slate-400">Resumen de tu carrito</p>
-                <p className="text-3xl font-bold">{cartQuantity} producto{cartQuantity !== 1 ? 's' : ''}</p>
+          <div className="card shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-brand-accent/10 rounded-xl text-brand-accent">
+                  <ShoppingBag className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-brand-accent">Tu Carrito</p>
+                  <p className="text-2xl font-black tracking-tighter">{cartQuantity} Artículos</p>
+                </div>
               </div>
-              <ShoppingBag className="w-8 h-8 text-brand-accent" />
             </div>
+
             <div className="space-y-4">
               {cartItems.length ? cartItems.map(item => (
-                <div key={item.id} className="rounded-3xl border border-slate-800 bg-slate-900/95 p-4">
-                  <div className="flex items-center gap-3">
-                    <img src={item.image} alt={item.name} className="w-16 h-16 rounded-2xl object-cover" />
-                    <div className="flex-1">
-                      <p className="font-semibold text-white">{item.name}</p>
-                      <p className="text-sm text-slate-400">{item.quantity} x {item.price.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
+                <div key={item.id} className="flex gap-4 p-3 rounded-2xl bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-800 group transition-all">
+                  <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover shadow-sm group-hover:scale-105 transition-transform" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm truncate">{item.name}</p>
+                    <p className="text-xs text-brand-accent font-black tracking-tight">{item.price.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
+                    <div className="mt-2 flex items-center gap-3">
+                      <button
+                        onClick={() => handleQuantity(item.id, item.quantity - 1)}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-brand-accent hover:text-white transition-all"
+                      >-</button>
+                      <span className="text-xs font-black w-4 text-center">{item.quantity}</span>
+                      <button
+                        onClick={() => handleQuantity(item.id, item.quantity + 1)}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-brand-accent hover:text-white transition-all"
+                      >+</button>
                     </div>
-                  </div>
-                  <div className="mt-3 flex items-center gap-2 text-sm text-slate-300">
-                    <button
-                      onClick={() => handleQuantity(item.id, item.quantity - 1)}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-950/90 text-white"
-                    >-</button>
-                    <span className="w-10 text-center">{item.quantity}</span>
-                    <button
-                      onClick={() => handleQuantity(item.id, item.quantity + 1)}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-950/90 text-white"
-                    >+</button>
                   </div>
                 </div>
               )) : (
-                <div className="rounded-3xl border border-slate-800 bg-slate-900/95 p-6 text-center text-slate-400">
-                  Aún no hay productos en el carrito.
+                <div className="p-10 text-center text-gray-400 italic text-sm">
+                  Carrito vacío
                 </div>
               )}
             </div>
-            <div className="mt-6 rounded-3xl bg-slate-800/90 p-4 text-sm text-slate-300">
-              <p className="flex justify-between"><span>Total</span><span>{totalPrice.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span></p>
+
+            <div className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+               <div className="flex justify-between items-end">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Total a pagar</span>
+                  <span className="text-3xl font-black text-brand-accent tracking-tighter">{totalPrice.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span>
+               </div>
+               <button
+                onClick={handleCheckout}
+                disabled={processing || !cartItems.length}
+                className="btn-primary w-full mt-6 py-4 text-lg bg-brand-dark dark:bg-brand-accent"
+              >
+                {processing ? 'Confirmando...' : 'Confirmar Pedido'}
+              </button>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-            <div className="flex items-start gap-3 text-brand-accent mb-4">
-              <CheckCircle2 className="w-6 h-6" />
-              <div>
-                <p className="font-semibold">Compra con seguridad</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Tu pedido se registra automáticamente y el stock se actualiza al instante.</p>
+          {(role === 'peluquero' || role === 'jefe') && (
+            <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+              <div className="flex items-start gap-3 text-brand-accent mb-4">
+                <CheckCircle2 className="w-6 h-6" />
+                <div>
+                  <p className="font-semibold text-brand-dark dark:text-white">Panel de Gestión</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Como profesional, puedes administrar el inventario directamente.</p>
+                </div>
               </div>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Accede a las herramientas de control de stock y pedidos.</p>
+              <Link to={role === 'jefe' ? '/jefe' : '/peluquero'} className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-brand-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-600">
+                Ir a gestión de stock <ChevronRight className="w-4 h-4" />
+              </Link>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300">Si eres peluquero, puedes gestionar el stock desde tu panel.</p>
-            <Link to="/peluquero" className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-brand-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-600">
-              Ir a gestión de stock <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
+          )}
         </aside>
       </div>
     </div>

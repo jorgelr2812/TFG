@@ -1,205 +1,124 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-dark: #1e293b;
-  --color-brand-light: #f8fafc;
-  --color-brand-accent: #3b82f6;
-  --color-brand-secondary: #64748b;
-  --font-sans: 'Inter', sans-serif;
+  --color-brand-dark: #0f172a;
+  --color-brand-light: #ffffff;
+  --color-brand-accent: #3b82f6; /* Azul profesional */
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+/* 
+   SISTEMA DE VARIABLES DE DISEÑO
+   Definición estricta de colores para evitar mezclas entre modos.
+*/
+:root {
+  --canvas: #f8fafc;        /* Fondo general */
+  --surface: #ffffff;       /* Fondo de tarjetas/componentes */
+  --text-main: #0f172a;     /* Texto principal */
+  --text-muted: #64748b;    /* Texto secundario */
+  --border: #e2e8f0;        /* Bordes */
+  --accent: #3b82f6;        /* Color de destaque */
+  --nav-blur: rgba(255, 255, 255, 0.8);
+}
+
+.dark {
+  --canvas: #020617;        /* Azul casi negro muy profundo */
+  --surface: #0f172a;       /* Gris azulado oscuro para tarjetas */
+  --text-main: #f8fafc;     /* Blanco roto */
+  --text-muted: #94a3b8;    /* Gris azulado claro */
+  --border: #1e293b;        /* Borde oscuro sutil */
+  --accent: #60a5fa;        /* Azul claro brillante */
+  --nav-blur: rgba(2, 6, 23, 0.8);
 }
 
 @layer base {
-  body {
-    background-color: var(--color-brand-light);
-    color: var(--color-brand-dark);
-    -webkit-font-smoothing: antialiased;
-    font-family: var(--font-sans);
-    margin: 0;
-    padding: 0;
+  * {
+    @apply transition-colors duration-200;
+    border-color: var(--border);
   }
-  .dark body {
-    background-color: #1e293b;
-    color: #f1f5f9;
+  
+  body {
+    background-color: var(--canvas);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--text-main);
+    @apply tracking-tight;
   }
 }
 
 @layer components {
+  /* BOTÓN PRINCIPAL */
   .btn-primary {
-    background-color: var(--color-brand-accent);
-    color: white;
-    padding: 0.625rem 1.5rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    transition: all 0.2s;
-    font-weight: 500;
+    @apply px-6 py-2.5 rounded-xl font-bold transition-all active:scale-95 shadow-md;
+    background-color: var(--accent);
+    color: #ffffff;
   }
   .btn-primary:hover {
-    background-color: #2563eb;
+    @apply shadow-lg brightness-110 -translate-y-0.5;
   }
   .btn-primary:disabled {
-    opacity: 0.5;
+    @apply opacity-50 cursor-not-allowed transform-none shadow-none;
   }
+
+  /* CAMPOS DE ENTRADA */
   .input-field {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.5rem;
-    background-color: white;
-    color: var(--color-brand-dark);
-    transition: all 0.2s;
+    @apply w-full p-3 rounded-xl border outline-none transition-all;
+    background-color: var(--surface);
+    color: var(--text-main);
+    border-color: var(--border);
   }
-  .dark .input-field {
-    background-color: #374151;
-    border-color: #4b5563;
-    color: #f1f5f9;
+  .input-field:focus {
+    @apply ring-2;
+    border-color: var(--accent);
+    --tw-ring-color: rgba(59, 130, 246, 0.2);
   }
-  .dark .input-field:focus {
-    outline: none;
-    --tw-ring-color: var(--color-brand-accent);
-    box-shadow: 0 0 0 2px var(--tw-ring-color);
-  }
+
+  /* TARJETAS PREMIUM */
   .card {
-    background-color: white;
-    padding: 1.5rem;
-    border-radius: 0.75rem;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    border: 1px solid #f3f4f6;
+    @apply p-6 rounded-2xl border shadow-sm transition-all;
+    background-color: var(--surface);
+    border-color: var(--border);
   }
-  .dark .card {
-    background-color: #374151;
-    border-color: #4b5563;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+
+  /* EFECTO CRISTAL (Header) */
+  .glass {
+    backdrop-filter: blur(12px);
+    background-color: var(--nav-blur);
+    border-bottom: 1px solid var(--border);
   }
 }
 
-/* Dark mode styles for react-big-calendar */
-.dark .rbc-calendar {
-  background: #4b5563;
-  color: #f1f5f9;
+/* COMPATIBILIDAD CALENDARIO (React Big Calendar) */
+.rbc-calendar { background: var(--surface); color: var(--text-main); }
+.rbc-header { background: var(--canvas); color: var(--text-muted); border-bottom-color: var(--border); padding: 10px !important; }
+.rbc-today { background: rgba(59, 130, 246, 0.05); }
+.rbc-off-range-bg { background: rgba(0, 0, 0, 0.05); }
+.dark .rbc-off-range-bg { background: rgba(255, 255, 255, 0.02); }
+.rbc-toolbar button { color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; margin: 2px; }
+.rbc-toolbar button.rbc-active { background-color: var(--accent); color: white; border-color: var(--accent); }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--canvas); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* FILTRO OSCURO PARA MAPAS */
+.dark iframe {
+  filter: invert(90%) hue-rotate(180deg) contrast(1.2);
+  opacity: 0.7;
 }
-.dark .rbc-header {
-  background: #6b7280;
-  color: #f1f5f9;
-  border-color: #9ca3af;
-}
-.dark .rbc-today {
-  background-color: rgba(59, 130, 246, 0.1);
-}
-.dark .rbc-event {
-  background-color: #3b82f6;
-  color: white;
-}
-.dark .rbc-event:hover {
-  background-color: #2563eb;
-}
-.dark .rbc-toolbar {
-  background: #4b5563;
-  color: #f1f5f9;
-}
-.dark .rbc-toolbar button {
-  color: #f1f5f9;
+.dark iframe:hover {
+  opacity: 1;
 }
 
-/* Custom dark mode classes */
-.dark .dark-header {
-  background-color: #1e293b;
-}
-
-.dark .dark-nav {
-  background-color: #374151;
-}
-
-.dark .dark-logo {
-  color: #f1f5f9;
-}
-
-.dark .dark-mobile-nav {
-  background-color: #374151;
-}
-
-.dark .dark-mobile-link {
-  color: #f1f5f9;
-}
-
-.dark .dark-toggle {
-  background-color: #374151;
-  color: #f1f5f9;
-}
-
-.dark .dark-card {
-  background-color: #374151;
-  border-color: #4b5563;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-}
-
-.dark .dark-heading {
-  color: #f1f5f9;
-}
-
-.dark .dark-label {
-  color: #d1d5db;
-}
-
-.dark .dark-input {
-  background-color: #374151;
-  border-color: #4b5563;
-  color: #f1f5f9;
-}
-
-.dark .dark-input:focus {
-  outline: none;
-  --tw-ring-color: var(--color-brand-accent);
-  box-shadow: 0 0 0 2px var(--tw-ring-color);
-}
-
-.dark .dark-button {
-  background-color: #2563eb;
-}
-
-.dark .dark-button:hover {
-  background-color: #1d4ed8;
-}
-
-.dark .dark-text {
-  color: #d1d5db;
-}
-
-.dark .dark-table {
-  background-color: #374151;
-  border-color: #4b5563;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-}
-
-.dark .dark-table-header {
-  background-color: #4b5563;
-  color: #d1d5db;
-}
-
-.dark .dark-table-row:hover {
-  background-color: #4b5563;
-}
-
-.dark .dark-view-button {
-  background-color: #6b7280;
-  color: #f1f5f9;
-}
-
-.dark .dark-placeholder {
-  background-color: #4b5563;
-  border-color: #6b7280;
-}
-.dark .rbc-toolbar button:hover {
-  background: #6b7280;
-}
-.dark .rbc-month-view, .dark .rbc-time-view {
-  border-color: #6b7280;
-}
-.dark .rbc-current-time-indicator {
-  background-color: #ef4444;
-}
-
-/* Dark mode for react-loading-skeleton */
-.dark .react-loading-skeleton {
-  background-color: #374151 !important;
-  background-image: linear-gradient(90deg, #374151, #4b5563, #374151) !important;
-}
+/* FIXES PARA MODO OSCURO MEZCLADO */
+.dark .bg-white { background-color: var(--surface) !important; }
+.dark .text-gray-900 { color: var(--text-main) !important; }
+.dark .text-gray-600 { color: var(--text-muted) !important; }
+.dark .border-gray-200 { border-color: var(--border) !important; }
+.dark .bg-gray-50 { background-color: var(--canvas) !important; }

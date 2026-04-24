@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { BarChart3, Users, DollarSign, CalendarCheck, ShoppingCart } from 'lucide-react';
+import { BarChart3, Users, DollarSign, CalendarCheck, ShoppingCart, TrendingUp, Sparkles, AlertCircle } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { getProducts, getOrders, computeShopStats } from '../lib/shop';
 import { getAppointments, getSuggestions } from '../lib/api';
-
-// Panel de jefe con estadísticas de citas y tienda.
-
-// Panel de jefe con estadísticas de citas y tienda.
+import AgendaManager from '../components/AgendaManager';
+import StockManager from '../components/StockManager';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -20,186 +18,158 @@ export default function JefeDashboard() {
   const [chartData, setChartData] = useState(null);
   const [salesData, setSalesData] = useState(null);
   const [shopStats, setShopStats] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const appointmentsResponse = await getAppointments(token)
-        const suggestionsResponse = await getSuggestions(token)
-        const citasData = appointmentsResponse.appointments || []
-        const suggestionsCount = suggestionsResponse.suggestions?.length || 0
+        const [appointmentsResponse, suggestionsResponse] = await Promise.all([
+          getAppointments(token),
+          getSuggestions(token)
+        ]);
+        const citasData = appointmentsResponse.appointments || [];
+        const suggestionsList = suggestionsResponse.suggestions || [];
+        setSuggestions(suggestionsList);
 
-        const monthlyData = {}
+        const monthlyData = {};
+        let citaRevenue = 0;
         citasData.forEach(cita => {
-          const month = new Date(cita.fecha).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })
-          monthlyData[month] = (monthlyData[month] || 0) + 1
-        })
+          if (cita.estado === 'completada') {
+            citaRevenue += parseFloat(cita.precio || 0);
+          }
+          const month = new Date(cita.fecha).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
+          monthlyData[month] = (monthlyData[month] || 0) + 1;
+        });
 
-        const products = getProducts()
-        const orders = getOrders()
-        const shopStats = computeShopStats(orders, products)
+        const products = getProducts();
+        const orders = getOrders();
+        const shopStats = computeShopStats(orders, products);
+        const totalRevenue = shopStats.totalRevenue + citaRevenue;
 
         setChartData({
           labels: Object.keys(monthlyData),
           datasets: [{
-            label: 'Citas',
+            label: 'Citas Reservadas',
             data: Object.values(monthlyData),
-            backgroundColor: 'rgba(59, 130, 246, 0.5)',
-            borderColor: 'rgba(59, 130, 246, 1)',
-            borderWidth: 1
+            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+            borderRadius: 8,
           }]
-        })
+        });
 
         setSalesData({
           labels: Object.keys(shopStats.monthlyRevenue),
           datasets: [{
-            label: 'Ingresos tienda',
+            label: 'Ventas (€)',
             data: Object.values(shopStats.monthlyRevenue),
-            backgroundColor: 'rgba(16, 185, 129, 0.5)',
-            borderColor: 'rgba(16, 185, 129, 1)',
-            borderWidth: 1
+            backgroundColor: 'rgba(16, 185, 129, 0.7)',
+            borderRadius: 8,
           }]
-        })
+        });
 
-        setShopStats(shopStats)
+        setShopStats(shopStats);
         setStats([
-          { name: 'Citas Totales', value: citasData.length, icon: CalendarCheck, color: 'text-purple-600', bg: 'bg-purple-100' },
-          { name: 'Sugerencias Recibidas', value: suggestionsCount, icon: Users, color: 'text-blue-600', bg: 'bg-blue-100' },
-          { name: 'Pedidos de Tienda', value: shopStats.totalOrders, icon: ShoppingCart, color: 'text-emerald-600', bg: 'bg-emerald-100' },
-          { name: 'Ingresos Tienda', value: shopStats.totalRevenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }), icon: DollarSign, color: 'text-green-600', bg: 'bg-green-100' },
-        ])
+          { name: 'Citas Totales', value: citasData.length, icon: CalendarCheck, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/10' },
+          { name: 'Sugerencias', value: suggestionsList.length, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/10' },
+          { name: 'Ingresos Servicios', value: citaRevenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }), icon: Sparkles, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/10' },
+          { name: 'Caja Total', value: totalRevenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }), icon: TrendingUp, color: 'text-brand-accent', bg: 'bg-blue-50 dark:bg-blue-900/10' },
+        ]);
       } catch (err) {
-        console.error('Fetch dashboard stats error:', err)
+        console.error('Fetch dashboard stats error:', err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchStats()
-  }, [token])
+    fetchStats();
+  }, [token]);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="mb-8 border-b pb-4">
-        <h1 className="text-3xl font-bold text-brand-dark dark-heading">Panel de Administración</h1>
-        <p className="text-gray-600 dark-text mt-2">Bienvenido, jefe. Aquí tienes el resumen del negocio.</p>
-      </div>
-
-      {/* Grid de Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        {loading ? (
-          Array(4).fill().map((_, i) => (
-            <div key={i} className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md dark:shadow-lg border border-gray-200 dark:border-gray-700">
-              <Skeleton height={60} />
+    <div className="min-h-screen bg-[var(--canvas)] pb-20">
+      {/* Header Premium */}
+      <header className="bg-[var(--surface)] border-b border-[var(--border)] pt-32 pb-12">
+        <div className="container mx-auto px-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <div className="flex items-center gap-2 text-brand-accent font-black text-sm uppercase tracking-widest mb-3">
+              <BarChart3 size={16} /> ADMINISTRACIÓN JLR
             </div>
-          ))
-        ) : (
-          stats.map((stat, i) => {
-            const Icon = stat.icon;
-            return (
-              <div key={i} className="bg-white flex items-center p-6 rounded-lg shadow-md border border-gray-200 dark-card">
-                <div className={`p-4 rounded-full mr-4 ${stat.bg}`}>
-                  <Icon className={`w-8 h-8 ${stat.color}`} />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark-text">{stat.name}</p>
-                  <p className="text-2xl font-bold text-gray-900 dark-heading">{stat.value}</p>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_0.95fr] gap-8">
-        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 dark-card">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark-heading">Citas por Mes</h3>
-              <p className="text-sm text-gray-500 dark-text">Evolución mensual de las reservas en tu salón.</p>
-            </div>
-            <span className="text-sm font-semibold text-brand-accent">Datos actualizados</span>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tighter">Panel de Gestión</h1>
+            <p className="text-gray-500 dark:text-slate-400 mt-2 text-lg">Control total de ventas, personal y agenda de la barbería.</p>
           </div>
-          {chartData ? (
-            <Bar 
-              data={chartData} 
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { position: 'top' },
-                  title: { display: false }
-                }
-              }}
-            />
+          <div className="flex gap-4">
+             <div className="px-6 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-2xl font-bold shadow-lg">
+               {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
+             </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-6 -mt-8">
+        {/* Estadísticas Rápidas */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          {loading ? (
+            Array(4).fill().map((_, i) => <div key={i} className="card h-32 animate-pulse" />)
           ) : (
-            <Skeleton height={200} />
+            stats.map((stat, i) => {
+              const Icon = stat.icon;
+              return (
+                <div key={i} className="card group hover:scale-[1.02] transition-all">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`p-3 rounded-2xl ${stat.bg}`}>
+                      <Icon className={`w-6 h-6 ${stat.color}`} />
+                    </div>
+                    <span className="text-emerald-500 text-xs font-bold bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-full">+12%</span>
+                  </div>
+                  <p className="text-sm font-bold text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wider">{stat.name}</p>
+                  <p className="text-3xl font-black tracking-tighter">{stat.value}</p>
+                </div>
+              );
+            })
           )}
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 dark-card">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark-heading">Ventas de la tienda</h3>
-                <p className="text-sm text-gray-500 dark-text">Resumen de ingresos y productos más vendidos.</p>
-              </div>
-              <ShoppingCart className="w-6 h-6 text-brand-accent" />
-            </div>
-            {salesData ? (
-              <Bar 
-                data={salesData} 
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: { position: 'top' },
-                    title: { display: false }
-                  }
-                }}
-              />
-            ) : (
-              <Skeleton height={200} />
-            )}
+        {/* Agenda Manager */}
+        <section className="mb-12">
+           <AgendaManager />
+        </section>
+
+        {/* Gráficos Principales */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          {/* Citas Gráfico */}
+          <div className="card">
+            <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+              <CalendarCheck className="text-brand-accent" /> Histórico de Citas
+            </h3>
+            {chartData ? <Bar data={chartData} options={{ responsive: true, plugins: { legend: { display: false } } }} /> : <Skeleton height={300} />}
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 dark-card">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark-heading">Productos con bajo stock</h3>
-            {shopStats?.lowStock?.length ? (
-              <div className="space-y-3">
-                {shopStats.lowStock.map((product) => (
-                  <div key={product.id} className="rounded-3xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 p-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">{product.name}</p>
-                        <p className="text-sm text-gray-500 dark:text-slate-400">Quedan solo {product.stock} unidades</p>
-                      </div>
-                      <span className="text-sm font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full">Reponer</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 dark-text">No hay productos urgentes para reponer.</p>
-            )}
+          {/* Tienda Gráfico */}
+          <div className="card">
+            <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+               <ShoppingCart className="text-emerald-500" /> Rendimiento Tienda
+            </h3>
+            {salesData ? <Bar data={salesData} options={{ responsive: true, plugins: { legend: { display: false } } }} /> : <Skeleton height={300} />}
           </div>
-          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 dark-card">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark-heading">Más vendidos</h3>
-            {shopStats?.bestSellers?.length ? (
-              <div className="space-y-3">
-                {shopStats.bestSellers.map((product, idx) => (
-                  <div key={product.name} className="rounded-3xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 p-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">{idx + 1}. {product.name}</p>
-                        <p className="text-sm text-gray-500 dark:text-slate-400">Vendidos: {product.quantity} unidades</p>
-                      </div>
-                      <span className="text-sm font-semibold text-brand-accent">{product.revenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span>
-                    </div>
-                  </div>
-                ))}
+        </div>
+
+        {/* Gestión de Inventario Profesional */}
+        <div className="mb-12">
+           <StockManager />
+        </div>
+
+        {/* Buzón de Sugerencias */}
+        <div className="card">
+          <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
+             <Users className="text-brand-accent" /> Feedback de Clientes
+          </h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {suggestions.map(s => (
+              <div key={s.id} className="p-6 rounded-3xl bg-[var(--canvas)] border border-[var(--border)]">
+                <p className="text-xs text-gray-500 font-bold mb-1 uppercase tracking-widest">{s.user_email}</p>
+                <p className="text-lg italic">"{s.mensaje}"</p>
+                <p className="text-[10px] mt-4 text-gray-400">{new Date(s.created_at).toLocaleDateString()}</p>
               </div>
-            ) : (
-              <p className="text-gray-500 dark-text">No hay datos de ventas todavía.</p>
-            )}
+            ))}
+            {suggestions.length === 0 && <p className="text-gray-400 text-center py-10 w-full col-span-full">No hay sugerencias por ahora.</p>}
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { ThemeProvider } from './context/ThemeContext'
 import Skeleton from 'react-loading-skeleton'
 import { Toaster } from 'react-hot-toast'
+import ChatBot from './components/ChatBot'
 import 'react-loading-skeleton/dist/skeleton.css'
 
 // Componente principal que monta las rutas y los proveedores de contexto.
@@ -38,7 +39,7 @@ function App() {
     <ThemeProvider>
       <ErrorBoundary>
         <Router>
-          <div className="flex flex-col min-h-screen">
+          <div className="flex flex-col min-h-screen bg-[var(--canvas)]">
             <Header />
             <main className="flex-grow pt-20">
               <Suspense fallback={<LoadingFallback />}>
@@ -74,6 +75,7 @@ function App() {
           </main>
           <Footer />
         </div>
+        <ChatBot />
       </Router>
       <Toaster position="top-right" />
     </ErrorBoundary>
