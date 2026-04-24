@@ -1,34 +1,43 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { Scissors, Palette, Sparkles, CalendarDays, Clock } from 'lucide-react'
+import { Scissors, Palette, Sparkles, CalendarDays, Clock, Star } from 'lucide-react'
 import { useForm } from 'react-hook-form'
-import { createSuggestion, createAppointment, getAppointments } from '../lib/api'
+import { createSuggestion, createAppointment, getAppointments, getBarberos } from '../lib/api'
 import toast from 'react-hot-toast'
 
 export default function Home() {
-  const { user, token } = useAuth()
+  const { user, token, updateUserPoints } = useAuth()
   const [sugerenciaTexto, setSugerenciaTexto] = useState('')
   const [allAppointments, setAllAppointments] = useState([])
+  const [barberos, setBarberos] = useState([])
   
   const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm({
     defaultValues: {
       servicio: 'Corte',
       fecha: new Date().toISOString().split('T')[0],
-      hora: ''
+      hora: '',
+      barberoId: ''
     }
   })
 
   const selectedDate = watch('fecha')
   const selectedHora = watch('hora')
+  const selectedServicio = watch('servicio')
 
   useEffect(() => {
+    getBarberos().then(res => setBarberos(res.barberos))
     if (user && token) {
       getAppointments(token)
         .then(res => setAllAppointments(res.appointments || []))
         .catch(err => console.error("Error al cargar citas:", err))
     }
   }, [user, token])
+
+  const calculatePoints = (servicio) => {
+    const table = { 'Corte': 10, 'Color': 25, 'Tratamiento': 20, 'Barba': 5 }
+    return table[servicio] || 0
+  }
 
   const occupiedSlots = useMemo(() => {
     return allAppointments
@@ -112,15 +121,33 @@ export default function Home() {
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Servicio</label>
                 <select {...register("servicio")} className="input-field">
-                  <option value="Corte">Corte Profesional</option>
-                  <option value="Color">Coloración / Tinte</option>
-                  <option value="Tratamiento">Tratamiento Capilar</option>
-                  <option value="Barba">Arreglo de Barba</option>
+                  <option value="Corte">Corte Profesional (10 pts)</option>
+                  <option value="Color">Coloración / Tinte (25 pts)</option>
+                  <option value="Tratamiento">Tratamiento Capilar (20 pts)</option>
+                  <option value="Barba">Arreglo de Barba (5 pts)</option>
                 </select>
               </div>
               <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Profesional</label>
+                <select {...register("barberoId", { required: true })} className="input-field">
+                  <option value="">Cualquier Barbero</option>
+                  {barberos.map(b => (
+                    <option key={b.id} value={b.id}>{b.name} ({b.specialty})</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Fecha</label>
                 <input type="date" {...register("fecha")} className="input-field" />
+              </div>
+              <div className="flex flex-col justify-center">
+                 <div className="p-3 bg-emerald-50 dark:bg-emerald-900/10 rounded-xl border border-emerald-100 dark:border-emerald-900/20">
+                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Recompensa JLR</p>
+                    <p className="text-sm font-bold">Ganarás <span className="text-emerald-500">+{calculatePoints(selectedServicio)} puntos</span></p>
+                 </div>
               </div>
             </div>
 
@@ -180,6 +207,50 @@ export default function Home() {
           </form>
         </div>
       </div>
+
+      {/* SECCIÓN DE RESEÑAS PREMIUM */}
+      <section className="container mx-auto px-6 pt-32">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-black tracking-tighter mb-4 uppercase">Opiniones de Nuestros Clientes</h2>
+          <div className="flex justify-center gap-1 text-amber-400 mb-2">
+             <Star size={18} className="fill-amber-400" />
+             <Star size={18} className="fill-amber-400" />
+             <Star size={18} className="fill-amber-400" />
+             <Star size={18} className="fill-amber-400" />
+             <Star size={18} className="fill-amber-400" />
+          </div>
+          <p className="text-gray-500 font-bold text-sm tracking-widest uppercase">Puntuación media: 4.9/5 basado en +200 citas</p>
+        </div>
+        
+        <div className="grid md:grid-cols-3 gap-8">
+          {[
+            { n: 'Antonio R.', r: 'El mejor degradado que me han hecho en años. Jorge es un artista.', c: 'VIP' },
+            { n: 'María G.', r: 'Llevé a mi hijo y el trato fue espectacular. Muy profesionales y puntuales.', c: 'Habitual' },
+            { n: 'Carlos P.', r: 'La barbería tiene un estilo increíble y los productos que venden son top.', c: 'VIP' }
+          ].map((rev, i) => (
+            <div key={i} className="card group hover:scale-[1.05] transition-all border-none shadow-2xl relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-4 opacity-5 rotate-12">
+                  <Star size={80} />
+               </div>
+               <div className="flex gap-1 text-amber-400 mb-6">
+                  <Star size={12} className="fill-amber-400" />
+                  <Star size={12} className="fill-amber-400" />
+                  <Star size={12} className="fill-amber-400" />
+                  <Star size={12} className="fill-amber-400" />
+                  <Star size={12} className="fill-amber-400" />
+               </div>
+               <p className="text-lg italic font-medium text-gray-700 dark:text-gray-200 mb-8 leading-relaxed">"{rev.r}"</p>
+               <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-brand-accent rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-brand-accent/30">{rev.n[0]}</div>
+                  <div>
+                    <h5 className="font-black text-sm">{rev.n}</h5>
+                    <p className="text-[10px] font-black text-brand-accent uppercase tracking-widest">{rev.c} JLR</p>
+                  </div>
+               </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* SERVICIOS DESTACADOS */}
       <section className="container mx-auto px-6 py-20">

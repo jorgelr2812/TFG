@@ -23,6 +23,7 @@ const Store = React.lazy(() => import('./pages/Store'))
 const JefeDashboard = React.lazy(() => import('./pages/JefeDashboard'))
 const PeluqueroDashboard = React.lazy(() => import('./pages/PeluqueroDashboard'))
 const NotFound = React.lazy(() => import('./pages/NotFound'))
+const Profile = React.lazy(() => import('./pages/Profile'))
 
 // Loading component
 const LoadingFallback = () => (
@@ -50,6 +51,7 @@ function App() {
                   <Route path="/gallery" element={<Gallery />} />
                   <Route path="/store" element={<Store />} />
                   <Route path="/contact" element={<Contact />} />
+                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                   
                   {/* Rutas de Roles */}
                   <Route 

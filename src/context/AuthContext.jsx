@@ -55,13 +55,18 @@ export const AuthProvider = ({ children }) => {
     initAuth()
   }, [])
 
+  const updateUserPoints = (newPoints) => {
+    setUser(prev => prev ? { ...prev, puntos: newPoints } : null)
+  }
+
   const value = {
     user,
     role,
     loading,
     token,
     setAuth,
-    clearAuth
+    clearAuth,
+    updateUserPoints
   }
 
   return (

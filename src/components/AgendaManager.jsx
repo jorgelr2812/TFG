@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Clock, User, CheckCircle, CalendarDays, Calendar as CalendarIcon, MoreHorizontal, ChevronRight } from 'lucide-react';
-import { getAppointments, updateAppointmentStatus } from '../lib/api';
+import { Clock, User, CheckCircle, CalendarDays, Calendar as CalendarIcon, MoreHorizontal, ChevronRight, Scissors } from 'lucide-react';
+import { getAppointments, updateAppointmentStatus, getBarberos, updateUserPointsApi } from '../lib/api';
 import Skeleton from 'react-loading-skeleton';
 import toast from 'react-hot-toast';
 import { Calendar as BigCalendar, dateFnsLocalizer } from 'react-big-calendar';
@@ -21,181 +21,135 @@ export default function AgendaManager() {
   const { token } = useAuth();
   const [citas, setCitas] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState('calendar'); // 'table' o 'calendar'
-  const [calendarDate, setCalendarDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState('calendar'); 
+  const [barberos, setBarberos] = useState([]);
 
   useEffect(() => {
-    const fetchCitas = async () => {
+    const fetchData = async () => {
       try {
-        const response = await getAppointments(token)
-        setCitas(response.appointments || [])
+        const [apptsRes, barbRes] = await Promise.all([
+          getAppointments(token),
+          getBarberos()
+        ])
+        setCitas(apptsRes.appointments || [])
+        setBarberos(barbRes.barberos || [])
       } catch (err) {
-        console.error('Error fetching citas:', err)
+        console.error('Error fetching agenda data:', err)
       } finally {
         setLoading(false)
       }
     };
-    fetchCitas();
+    fetchData();
   }, [token]);
 
   const updateEstado = async (id, nuevoEstado, precio = undefined) => {
     try {
-      await updateAppointmentStatus(id, nuevoEstado, token, precio)
-      setCitas(citas.map(cita => cita.id === id ? { ...cita, estado: nuevoEstado, precio: precio || cita.precio } : cita))
-      toast.success(`Cita actualizada a ${nuevoEstado}`)
+      const cita = citas.find(c => c.id === id);
+      await updateAppointmentStatus(id, nuevoEstado, token, precio);
+      
+      // Lógica de puntos al completar
+      if (nuevoEstado === 'completada' && cita) {
+        const table = { 'Corte': 10, 'Color': 25, 'Tratamiento': 20, 'Barba': 5 };
+        const earn = table[cita.servicio] || 10;
+        toast.success(`Cita cerrada. +${earn} puntos JLR.`);
+      }
+
+      setCitas(citas.map(c => c.id === id ? { ...c, estado: nuevoEstado, precio: precio || c.precio } : c));
+      toast.success(`Cita: ${nuevoEstado}`);
     } catch (err) {
-      toast.error('No se pudo actualizar el estado')
+      toast.error('Error al actualizar');
     }
   };
 
   const handleFinalizar = (id) => {
-    const precio = window.prompt('Cobro final (€):', '15.00')
+    const precio = window.prompt('Cobro final (€):', '15.00');
     if (precio !== null) {
-      const p = parseFloat(precio)
-      if (isNaN(p)) return toast.error('Precio no válido')
-      updateEstado(id, 'completada', p)
+      const p = parseFloat(precio);
+      if (isNaN(p)) return toast.error('Precio no válido');
+      updateEstado(id, 'completada', p);
     }
   }
 
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'completada': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
-      case 'confirmada': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
-      default: return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
-    }
+  const getBarberName = (id) => {
+    if (!id) return 'General';
+    const b = barberos.find(b => b.id === Number(id));
+    return b ? b.name : 'Asignado';
   }
 
   return (
     <div className="card border-none shadow-xl overflow-hidden p-0">
-      {/* Header de Agenda */}
-      <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900">
+      <div className="p-6 border-b border-[var(--border)] flex flex-col sm:flex-row justify-between items-center gap-4 bg-[var(--surface)]">
         <div>
           <h2 className="text-2xl font-black tracking-tight flex items-center gap-2">
-            <CalendarIcon className="text-brand-accent" /> Control de Agenda
+            <CalendarIcon className="text-brand-accent" /> Agenda Profesional
           </h2>
-          <p className="text-sm text-gray-500 font-medium">Gestiona turnos y cobros en tiempo real.</p>
+          <p className="text-sm text-gray-500 font-medium">Gestión de barberos y citas JLR.</p>
         </div>
         <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
-          <button 
-            onClick={() => setViewMode('calendar')}
-            className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'calendar' ? 'bg-white dark:bg-slate-700 shadow-sm' : 'text-gray-500'}`}
-          >
-            Calendario
-          </button>
-          <button 
-            onClick={() => setViewMode('table')}
-            className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'table' ? 'bg-white dark:bg-slate-700 shadow-sm' : 'text-gray-500'}`}
-          >
-            Listado
-          </button>
+           {['calendar', 'table'].map(m => (
+             <button key={m} onClick={() => setViewMode(m)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === m ? 'bg-white dark:bg-slate-700 shadow-sm' : 'text-gray-400'}`}>
+               {m === 'calendar' ? 'Calendario' : 'Listado'}
+             </button>
+           ))}
         </div>
       </div>
 
-      <div className="p-0">
-        {loading ? (
-          <div className="p-8"><Skeleton height={400} /></div>
-        ) : viewMode === 'table' ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-gray-50 dark:bg-slate-850/50 text-[10px] uppercase tracking-widest font-black text-gray-400">
-                  <th className="px-6 py-4">Información Cita</th>
-                  <th className="px-6 py-4">Cliente</th>
-                  <th className="px-6 py-4">Servicio</th>
-                  <th className="px-6 py-4 text-center">Estado</th>
-                  <th className="px-6 py-4 text-right">Manejo</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                {citas.map((cita) => (
-                  <tr key={cita.id} className="hover:bg-gray-50 dark:hover:bg-slate-900 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-gray-900 dark:text-white">
-                        {new Date(cita.fecha?.includes('T') ? cita.fecha.split('T')[0] : cita.fecha).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
-                      </div>
-                      <div className="flex items-center gap-1 text-xs text-brand-accent font-bold mt-0.5 uppercase tracking-tighter">
-                        <Clock size={12} /> {cita.hora}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-800 flex items-center justify-center font-bold text-xs uppercase">
-                          {cita.user_email?.charAt(0) || 'U'}
+      <div className="p-0 bg-[var(--surface)]">
+        {loading ? <div className="p-8"><Skeleton height={400} /></div> : 
+         viewMode === 'table' ? (
+           <div className="overflow-x-auto">
+             <table className="w-full text-left">
+               <thead>
+                 <tr className="bg-gray-50 dark:bg-slate-850/50 text-[10px] uppercase tracking-widest font-black text-gray-400">
+                   <th className="px-6 py-4">Cita</th>
+                   <th className="px-6 py-4">Cliente</th>
+                   <th className="px-6 py-4">Barbero</th>
+                   <th className="px-6 py-4">Servicio</th>
+                   <th className="px-6 py-4 text-right">Acción</th>
+                 </tr>
+               </thead>
+               <tbody className="divide-y divide-[var(--border)]">
+                 {citas.map(cita => (
+                   <tr key={cita.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50 transition-colors">
+                     <td className="px-6 py-4 font-bold text-sm">
+                       {new Date(cita.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                       <span className="block text-[10px] text-brand-accent font-black uppercase mt-1">{cita.hora}</span>
+                     </td>
+                     <td className="px-6 py-4 text-xs font-bold text-gray-500">
+                       {cita.user_email?.split('@')[0]}
+                     </td>
+                     <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                           <div className="w-6 h-6 bg-brand-accent/10 text-brand-accent rounded-full flex items-center justify-center"><User size={12}/></div>
+                           <span className="text-xs font-black">{getBarberName(cita.barberoId)}</span>
                         </div>
-                        <span className="text-sm font-medium">{cita.user_email || 'Sin registro'}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-bold text-gray-600 dark:text-slate-300">{cita.servicio}</span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-center">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${getStatusColor(cita.estado)}`}>
-                        {cita.estado}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        {cita.estado === 'pendiente' && (
-                          <button onClick={() => updateEstado(cita.id, 'confirmada')} className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg group-hover:scale-110 transition">
-                            <CheckCircle size={18} />
-                          </button>
-                        )}
-                        {(cita.estado === 'pendiente' || cita.estado === 'confirmada') && (
-                          <button onClick={() => handleFinalizar(cita.id)} className="px-3 py-1.5 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg hover:shadow-lg hover:scale-105 transition">
-                            Cobrar
-                          </button>
-                        )}
-                        {cita.estado === 'completada' && (
-                          <span className="font-black text-emerald-600 text-sm">
-                            {parseFloat(cita.precio).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="p-4" style={{ height: '700px' }}>
-            <BigCalendar
-              localizer={localizer}
-              events={citas.map(cita => {
-                const datePart = cita.fecha && typeof cita.fecha === 'string' ? cita.fecha.split('T')[0] : new Date().toISOString().split('T')[0];
-                const timePart = cita.hora || '00:00';
-                const start = new Date(`${datePart}T${timePart}`);
-                return {
-                  id: cita.id,
-                  title: `${cita.servicio} - ${cita.user_email?.split('@')[0] || 'Cliente'}`,
-                  start,
-                  end: new Date(start.getTime() + 45 * 60 * 1000), // 45 min duration
-                  resource: cita
-                };
-              })}
-              onSelectEvent={(e) => {
-                if (window.confirm(`Gestionar cita: ${e.title}\nEstado actual: ${e.resource.estado}`)) {
-                   if (e.resource.estado === 'pendiente') updateEstado(e.id, 'confirmada');
-                   else if (e.resource.estado === 'confirmada') handleFinalizar(e.id);
-                }
-              }}
-              culture="es"
-              eventPropGetter={(e) => ({
-                style: {
-                  backgroundColor: e.resource.estado === 'completada' ? '#10b981' : e.resource.estado === 'confirmada' ? '#3b82f6' : '#f59e0b',
-                  borderRadius: '12px',
-                  border: 'none',
-                  fontSize: '0.75rem',
-                  fontWeight: 'bold',
-                  padding: '4px 8px'
-                }
-              })}
-              messages={{
-                next: "Sig.", previous: "Ant.", today: "Hoy", month: "Mes", week: "Semana", day: "Día", agenda: "Agenda"
-              }}
-            />
-          </div>
-        )}
+                     </td>
+                     <td className="px-6 py-4">
+                       <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${cita.estado === 'completada' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                         {cita.servicio}
+                       </span>
+                     </td>
+                     <td className="px-6 py-4 text-right">
+                       {(cita.estado === 'pendiente' || cita.estado === 'confirmada') && (
+                         <button onClick={() => handleFinalizar(cita.id)} className="px-4 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg">Cobrar</button>
+                       )}
+                       {cita.estado === 'completada' && <span className="font-black text-emerald-600">{cita.precio}€</span>}
+                     </td>
+                   </tr>
+                 ))}
+               </tbody>
+             </table>
+           </div>
+         ) : (
+           <div className="p-4" style={{ height: '600px' }}>
+              <BigCalendar
+                localizer={localizer}
+                events={citas.map(c => ({ id: c.id, title: `${c.servicio} (${getBarberName(c.barberoId)})`, start: new Date(`${c.fecha.split('T')[0]}T${c.hora}`), end: new Date(new Date(`${c.fecha.split('T')[0]}T${c.hora}`).getTime() + 45*60000), resource: c }))}
+                messages={{ next: "Sig.", previous: "Ant.", today: "Hoy", month: "Mes", week: "Semana", day: "Día" }}
+                eventPropGetter={(e) => ({ style: { backgroundColor: e.resource.estado === 'completada' ? '#10b981' : '#3b82f6', borderRadius: '8px', border: 'none', fontSize: '10px' } })}
+              />
+           </div>
+         )}
       </div>
     </div>
   );
