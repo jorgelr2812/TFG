@@ -37,7 +37,7 @@ export default function Header() {
         
         <div className="flex items-center gap-4 md:gap-8">
           {/* NAVEGACIÓN DESKTOP */}
-          <nav className="hidden lg:flex items-center gap-8 text-gray-500 dark:text-slate-400">
+          <nav className="hidden lg:flex items-center gap-8 text-gray-500 dark:text-slate-200">
             <Link to="/" className={navLinkClass}>Inicio</Link>
             <Link to="/gallery" className={navLinkClass}>Galería</Link>
             <Link to="/store" className={navLinkClass}>Tienda</Link>

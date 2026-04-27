@@ -34,19 +34,19 @@ export default function PeluqueroDashboard() {
 
           {/* Columna Lateral: Resumen Rápido */}
           <aside className="space-y-6">
-            <div className="card bg-brand-dark dark:bg-slate-900 text-white border-none shadow-xl relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-8 opacity-10">
+            <div className="card shadow-xl relative overflow-hidden group">
+               <div className="absolute top-0 right-0 p-8 opacity-5 text-brand-accent group-hover:scale-110 transition-transform">
                  <Clock size={120} />
                </div>
-               <h3 className="text-xl font-black mb-6 relative z-10">Estado de Hoy</h3>
+               <h3 className="text-xl font-black mb-6 relative z-10 text-brand-dark dark:text-white">Estado de Hoy</h3>
                <div className="space-y-4 relative z-10">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-400">Jornada</span>
-                    <span className="font-bold">Activa</span>
+                    <span className="text-gray-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px]">Jornada</span>
+                    <span className="font-black text-emerald-500">ACTIVA</span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-400">Próximo Turno</span>
-                    <span className="font-bold text-brand-accent">10:30 AM</span>
+                    <span className="text-gray-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px]">Próximo Turno</span>
+                    <span className="font-black text-brand-accent">10:30 AM</span>
                   </div>
                </div>
             </div>

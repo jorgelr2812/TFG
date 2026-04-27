@@ -144,8 +144,8 @@ export default function Home() {
                 <input type="date" {...register("fecha")} className="input-field" />
               </div>
               <div className="flex flex-col justify-center">
-                 <div className="p-3 bg-emerald-50 dark:bg-emerald-900/10 rounded-xl border border-emerald-100 dark:border-emerald-900/20">
-                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Recompensa JLR</p>
+                 <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-100 dark:border-emerald-800/30">
+                    <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Recompensa JLR</p>
                     <p className="text-sm font-bold">Ganarás <span className="text-emerald-500">+{calculatePoints(selectedServicio)} puntos</span></p>
                  </div>
               </div>

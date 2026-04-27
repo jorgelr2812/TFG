@@ -10,18 +10,18 @@ const BOT_KNOWLEDGE = {
 };
 
 const RESPONSES = {
-  greetings: "¡Hola! Soy el asistente virtual de la Peluquería TFG. ¿En qué puedo ayudarte hoy?",
-  services: "Ofrecemos servicios de corte (Hombre/Mujer), coloración (Tinte, Balayage), arreglos de barba y tratamientos capilares de alta gama. Puedes verlos todos en nuestra página de inicio.",
-  hours: "Estamos abiertos de Lunes a Sábado de 09:00 a 19:00. Puedes reservar tu cita directamente desde la web.",
-  location: "Nos encontramos en el centro de la ciudad. Puedes ver el mapa exacto en nuestra sección de contacto.",
-  prices: "Nuestros precios van desde los 15€ para cortes básicos. Si te registras, podrás ver todos los detalles al reservar tu cita.",
-  default: "No estoy seguro de haber entendido bien. ¿Te gustaría saber sobre nuestro horario, precios, servicios o dónde estamos?"
+  greetings: "¡Hola! Soy tu asistente de Barbería JLR. ¿En qué podemos ayudarte hoy?",
+  services: "En JLR somos especialistas en cortes modernos, degradados extremos, coloración técnica y cuidado de barba. ¿Te gustaría reservar una sesión?",
+  hours: "Nuestro equipo te espera de Lunes a Sábado de 09:00 a 20:00. ¡Reserva tu hueco ahora!",
+  location: "Estamos en el corazón de la ciudad. Consulta el mapa interactivo en la sección de Contacto para guiarnos.",
+  prices: "Calidad profesional a precios competitivos: desde 10€ (Barba) hasta servicios completos de color. ¡Consulta el listado en Reservas!",
+  default: "Lo siento, no he entendido esa parte. ¿Quieres saber sobre precios, horarios, servicios o dónde estamos?"
 };
 
 export default function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { id: 1, text: "¡Hola! Bienvenido a Peluquería TFG. ¿Tienes alguna duda sobre nuestros servicios o citas?", sender: 'bot' }
+    { id: 1, text: "¡Bienvenido a Barbería JLR! ✂️ Soy tu asistente personal. ¿Tienes alguna duda sobre nuestras citas o servicios premium?", sender: 'bot' }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -71,7 +71,7 @@ export default function ChatBot() {
                 <Bot className="w-6 h-6" />
               </div>
               <div>
-                <p className="font-bold">Asistente TFG</p>
+                <p className="font-bold">Asistente JLR</p>
                 <p className="text-[10px] text-emerald-400 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span> En línea ahora
                 </p>
@@ -83,13 +83,13 @@ export default function ChatBot() {
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ backgroundColor: 'var(--canvas)' }}>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[var(--canvas)]">
             {messages.map(msg => (
               <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${
                   msg.sender === 'user' 
-                  ? 'bg-brand-accent text-white rounded-tr-none shadow-md' 
-                  : 'card p-3 rounded-tl-none shadow-sm text-sm'
+                  ? 'bg-brand-accent text-white rounded-tr-none shadow-md font-bold' 
+                  : 'bg-[var(--surface)] border border-[var(--border)] rounded-tl-none shadow-sm text-sm'
                 }`}>
                   {msg.text}
                 </div>
@@ -97,7 +97,7 @@ export default function ChatBot() {
             ))}
             {isTyping && (
               <div className="flex justify-start">
-                <div className="card p-3 rounded-tl-none animate-pulse">
+                <div className="bg-[var(--surface)] border border-[var(--border)] p-3 rounded-tl-none animate-pulse">
                   <div className="flex gap-1">
                     <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
                     <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
@@ -110,10 +110,10 @@ export default function ChatBot() {
           </div>
 
           {/* Quick Actions */}
-          <div className="px-4 py-3 flex flex-wrap gap-2 border-t" style={{ borderColor: 'var(--border)' }}>
-            <button onClick={() => setInputValue('Dime los precios')} className="text-[10px] font-bold bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-brand-accent hover:text-white px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm"><Sparkles className="w-3 h-3" /> Precios</button>
-            <button onClick={() => setInputValue('¿Cuál es vuestro horario?')} className="text-[10px] font-bold bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-brand-accent hover:text-white px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm"><Clock className="w-3 h-3" /> Horarios</button>
-            <button onClick={() => setInputValue('¿Dónde estáis?')} className="text-[10px] font-bold bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-brand-accent hover:text-white px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm"><MapPin className="w-3 h-3" /> Dirección</button>
+          <div className="px-4 py-3 flex flex-wrap gap-2 border-t border-[var(--border)] bg-[var(--surface)]">
+            <button onClick={() => setInputValue('Dime los precios')} className="text-[10px] font-black bg-gray-50 dark:bg-slate-900 border border-[var(--border)] text-gray-500 dark:text-slate-400 hover:bg-brand-accent hover:text-white px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm uppercase tracking-widest"><Sparkles className="w-3 h-3" /> Precios</button>
+            <button onClick={() => setInputValue('¿Cuál es vuestro horario?')} className="text-[10px] font-black bg-gray-50 dark:bg-slate-900 border border-[var(--border)] text-gray-500 dark:text-slate-400 hover:bg-brand-accent hover:text-white px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm uppercase tracking-widest"><Clock className="w-3 h-3" /> Horarios</button>
+            <button onClick={() => setInputValue('¿Dónde estáis?')} className="text-[10px] font-black bg-gray-50 dark:bg-slate-900 border border-[var(--border)] text-gray-500 dark:text-slate-400 hover:bg-brand-accent hover:text-white px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm uppercase tracking-widest"><MapPin className="w-3 h-3" /> Dirección</button>
           </div>
 
           {/* Footer Input */}

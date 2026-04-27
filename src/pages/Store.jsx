@@ -129,28 +129,30 @@ export default function Store() {
           <span className="inline-flex items-center gap-2 rounded-full bg-brand-accent/15 px-4 py-2 text-[10px] font-black text-brand-accent mb-6 uppercase tracking-[0.2em]">
             <Star size={14} className="fill-brand-accent" /> Exclusive Shop JLR
           </span>
-          <h1 className="text-6xl font-black text-brand-dark dark:text-white tracking-tighter mb-4">La Tienda del Barbero</h1>
-          <p className="text-xl text-gray-500 dark:text-slate-400 font-medium max-w-xl">
+          <h1 className="text-6xl font-black text-brand-dark dark:text-slate-100 tracking-tighter mb-4">La Tienda del Barbero</h1>
+          <p className="text-xl text-gray-500 dark:text-slate-300 font-medium max-w-xl leading-snug">
             Herramientas y cuidados de nivel profesional para mantener tu estilo intacto.
           </p>
         </div>
         
-        <div className="card shadow-2xl p-8 w-full lg:w-96 bg-brand-dark dark:bg-slate-900 border-none text-white relative overflow-hidden">
-           <div className="absolute top-0 right-0 p-8 opacity-5">
+        <div className="card shadow-2xl p-8 w-full lg:w-96 border-none relative overflow-hidden group hover:shadow-brand-accent/10 transition-all duration-500">
+           <div className="absolute top-0 right-0 p-8 opacity-5 text-brand-accent">
              <ShoppingCart size={120} />
            </div>
            <div className="relative z-10">
               <div className="flex justify-between items-center mb-6">
-                <span className="text-xs font-black uppercase tracking-widest text-gray-400">Carrito Actual</span>
-                <span className="bg-brand-accent text-white px-3 py-1 rounded-full text-[10px] font-black">{cartQuantity} Items</span>
+                <span className="text-xs font-black uppercase tracking-widest text-gray-500 dark:text-slate-400">Resumen del Carrito</span>
+                <span className="bg-brand-accent text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg shadow-brand-accent/20">{cartQuantity} Items</span>
               </div>
-              <div className="text-3xl font-black mb-8">{totalPrice.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</div>
+              <div className="text-4xl font-black mb-8 tracking-tighter text-brand-dark dark:text-white">
+                {totalPrice.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+              </div>
               <button
                 onClick={handleCheckout}
                 disabled={processing || !cartItems.length}
                 className="btn-primary w-full py-4 text-xs font-black uppercase tracking-widest shadow-xl shadow-brand-accent/20"
               >
-                {processing ? <Loader2 className="animate-spin inline mr-2" size={16} /> : 'Finalizar Pedido'}
+                {processing ? <Loader2 className="animate-spin inline mr-2" size={16} /> : 'Finalizar Compra'}
               </button>
            </div>
         </div>
