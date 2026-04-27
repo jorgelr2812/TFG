@@ -5,51 +5,22 @@ const ORDERS_KEY = 'peluqueria_shop_orders';
 const CART_KEY = 'peluqueria_shop_cart';
 
 const DEFAULT_PRODUCTS = [
-  {
-    id: 'prod-01',
-    name: 'Champú Nutritivo Premium',
-    description: 'Limpieza profunda y nutrición suave para cabello sano y brillante.',
-    price: 14.95,
-    stock: 18,
-    category: 'Cuidado',
-    image: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
-  },
-  {
-    id: 'prod-02',
-    name: 'Acondicionador Reparador',
-    description: 'Fortalece y desenreda el cabello mientras protege el color.',
-    price: 12.50,
-    stock: 14,
-    category: 'Cuidado',
-    image: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=900&q=80'
-  },
-  {
-    id: 'prod-03',
-    name: 'Cera Modeladora',
-    description: 'Fijación flexible sin apariencia grasa para acabado profesional.',
-    price: 11.90,
-    stock: 8,
-    category: 'Estilo',
-    image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=900&q=80'
-  },
-  {
-    id: 'prod-04',
-    name: 'Sérum Antifrizz',
-    description: 'Controla el encrespamiento y aporta brillo en segundos.',
-    price: 18.20,
-    stock: 6,
-    category: 'Tratamiento',
-    image: 'https://images.unsplash.com/photo-1500048993953-d4647a3f2ee5?auto=format&fit=crop&w=900&q=80'
-  },
-  {
-    id: 'prod-05',
-    name: 'Mascarilla Nutritiva',
-    description: 'Tratamiento intensivo para cabello seco y dañado.',
-    price: 22.00,
-    stock: 10,
-    category: 'Tratamiento',
-    image: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=900&q=80'
-  }
+  // CUIDADO
+  { id: 'prod-01', name: 'Champú Nutritivo JLR', description: 'Limpieza profunda y nutrición suave para el día a día.', price: 14.95, stock: 18, category: 'Cuidado', image: '/shampoo_professional_1777042390187.png' },
+  { id: 'prod-02', name: 'Acondicionador Reparador', description: 'Fortalece y desenreda el cabello tras el lavado.', price: 12.50, stock: 14, category: 'Cuidado', image: '/conditioner_professional_1777042512631.png' },
+  { id: 'prod-03', name: 'Mascarilla Capilar Pro', description: 'Tratamiento intensivo para hidratación profunda.', price: 22.00, stock: 10, category: 'Cuidado', image: '/hair_mask_jar_1777043365997.png' },
+  
+  // ESTILO
+  { id: 'prod-04', name: 'Cera Fijación Mate', description: 'Define tu estilo con un acabado natural sin brillos.', price: 15.90, stock: 12, category: 'Estilo', image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=800' },
+  { id: 'prod-05', name: 'Laca de Alta Fijación', description: 'Manten tu peinado intacto durante todo el día.', price: 13.50, stock: 20, category: 'Estilo', image: '/hair_spray_bottle_1777043589966.png' },
+  { id: 'prod-06', name: 'Sérum Brillo Extremo', description: 'Elimina el encrespamiento y aporta un brillo premium.', price: 19.00, stock: 7, category: 'Estilo', image: '/thermal_serum_bottle_1777043707776.png' },
+  
+  // AFEITADO Y BARBA
+  { id: 'prod-07', name: 'Aceite de Barba Argán', description: 'Hidrata el vello facial y cuida la piel debajo de la barba.', price: 16.50, stock: 15, category: 'Afeitado', image: '/argan_oil_bottle_1777042816632.png' },
+  { id: 'prod-08', name: 'Bálsamo After-Shave', description: 'Calma la irritación y refresca tras el afeitado profesional.', price: 14.00, stock: 11, category: 'Afeitado', image: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800' },
+  
+  // PACKS
+  { id: 'prod-09', name: 'Pack Cuidado Total', description: 'Champú + Acondicionador + Aceite de Barba. Lo mejor de JLR.', price: 39.99, stock: 5, category: 'Packs', image: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=800' }
 ];
 
 const safeParse = (value, fallback) => {
