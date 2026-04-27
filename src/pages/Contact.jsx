@@ -1,5 +1,5 @@
 import React from 'react'
-import { MapPin, Phone, Clock, Mail } from 'lucide-react'
+import { MapPin, Phone, Clock, Mail, Instagram, Facebook, Twitter } from 'lucide-react'
 
 export default function Contact() {
   const contactItems = [
@@ -50,6 +50,25 @@ export default function Contact() {
             className="rounded-2xl grayscale group-hover:grayscale-0 transition-all duration-700"
           ></iframe>
         </div>
+      </div>
+
+      {/* Social Media Support Row */}
+      <div className="mt-16 text-center">
+         <h3 className="text-xl font-black uppercase tracking-widest text-brand-accent mb-8">Síguenos en Redes</h3>
+         <div className="flex justify-center gap-6">
+           {[
+             { Icon: Instagram, label: 'Instagram', handle: '@BarberiaJLR_oficial' },
+             { Icon: Facebook, label: 'Facebook', handle: 'Barbería JLR' },
+             { Icon: Twitter, label: 'Twitter', handle: '@JLRBarber' }
+           ].map((social, i) => (
+             <a key={i} href="#" className="flex flex-col items-center gap-3 group">
+               <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-3xl flex items-center justify-center shadow-xl group-hover:bg-brand-accent group-hover:text-white transition-all transform group-hover:scale-110">
+                 <social.Icon size={28} />
+               </div>
+               <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-brand-accent transition-colors">{social.label}</span>
+             </a>
+           ))}
+         </div>
       </div>
     </div>
   )
