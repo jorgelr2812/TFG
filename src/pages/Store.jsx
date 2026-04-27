@@ -22,10 +22,17 @@ export default function Store() {
     const fetchInitialData = async () => {
       try {
         const { products: dbProducts } = await getStoreProducts()
-        setProducts(dbProducts)
-        saveProducts(dbProducts)
+        if (dbProducts && Array.isArray(dbProducts)) {
+          setProducts(dbProducts)
+          saveProducts(dbProducts)
+        } else {
+          // Fallback a locales si la API falla o viene vacía
+          const localProducts = getProducts()
+          setProducts(localProducts)
+        }
       } catch (err) {
         console.error('Error fetching products:', err)
+        setProducts(getProducts()) // Fallback a DEFAULT_PRODUCTS
       } finally {
         setLoading(false)
       }
