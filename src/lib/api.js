@@ -29,17 +29,17 @@ const apiFetch = async (path, options = {}) => {
   return data
 }
 
-export const login = async (email, password) => {
+export const login = async (email, password, captchaToken) => {
   return apiFetch('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({ email, password, captchaToken })
   })
 }
 
-export const register = async (email, password) => {
+export const register = async (email, password, captchaToken) => {
   return apiFetch('/api/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({ email, password, captchaToken })
   })
 }
 
@@ -133,5 +133,13 @@ export const getBarberos = async () => {
       { id: 3, name: 'Raúl', specialty: 'Barba Tradicional', image: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=100' }
     ]
   }
+}
+
+export const updateProductStockApi = async (items) => {
+  return apiFetch('/api/products/stock', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items })
+  })
 }
 

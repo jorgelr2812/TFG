@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Activa el modo oscuro basado en clase .dark (no en media query) */
+@variant dark (&:where(.dark, .dark *));
+
+
 @theme {
   --color-brand-dark: #0f172a;
   --color-brand-light: #ffffff;
@@ -93,13 +97,32 @@
 }
 
 /* COMPATIBILIDAD CALENDARIO (React Big Calendar) */
-.rbc-calendar { background: var(--surface); color: var(--text-main); }
-.rbc-header { background: var(--canvas); color: var(--text-muted); border-bottom-color: var(--border); padding: 10px !important; }
-.rbc-today { background: rgba(59, 130, 246, 0.05); }
+.rbc-calendar { background: transparent; color: var(--text-main); border: none; }
+.rbc-header { background: var(--canvas); color: var(--text-muted); border-bottom: 2px solid var(--border) !important; padding: 12px !important; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; }
+.rbc-month-view, .rbc-time-view { border-color: var(--border) !important; border-radius: 1rem; overflow: hidden; }
+.rbc-day-bg + .rbc-day-bg, .rbc-month-row + .rbc-month-row { border-left-color: var(--border) !important; border-top-color: var(--border) !important; }
+
+/* FIX DÍA ACTUAL */
+.rbc-today { 
+  background: rgba(59, 130, 246, 0.08) !important; 
+  position: relative;
+}
+.rbc-today::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: var(--accent);
+}
+.dark .rbc-today { 
+  background: rgba(96, 165, 250, 0.15) !important; 
+}
+
 .rbc-off-range-bg { background: rgba(0, 0, 0, 0.05); }
-.dark .rbc-off-range-bg { background: rgba(255, 255, 255, 0.02); }
-.rbc-toolbar button { color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; margin: 2px; }
-.rbc-toolbar button.rbc-active { background-color: var(--accent); color: white; border-color: var(--accent); }
+.dark .rbc-off-range-bg { background: rgba(255, 255, 255, 0.03); }
+.rbc-toolbar button { color: var(--text-main); border: 1px solid var(--border); border-radius: 12px; margin: 2px; padding: 8px 16px; font-weight: 700; transition: all 0.2s; }
+.rbc-toolbar button:hover { background: var(--canvas); border-color: var(--accent); }
+.rbc-toolbar button.rbc-active { background-color: var(--accent) !important; color: white !important; border-color: var(--accent) !important; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
 
 /* SCROLLBAR */
 ::-webkit-scrollbar { width: 8px; }

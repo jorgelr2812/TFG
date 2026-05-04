@@ -2,8 +2,11 @@ import express from 'express'
 import { body, validationResult } from 'express-validator'
 import db from '../db.js'
 import { authenticate } from '../middleware/auth.js'
+import { sendConfirmationEmail } from '../utils/mailer.js'
 
 const router = express.Router()
+
+// ... (previous validation logic)
 
 // Rutas de citas: crear, listar y actualizar estado.
 router.post('/',
@@ -25,12 +28,6 @@ router.post('/',
     })
   ],
   async (req, res) => {
-    console.log('--- Incoming Appointment Request ---');
-    console.log('Method:', req.method);
-    console.log('Headers:', req.headers);
-    console.log('Body:', req.body);
-    console.log('User:', req.user);
-
     const errors = validationResult(req)
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() })
 
@@ -40,6 +37,23 @@ router.post('/',
         'INSERT INTO appointments (user_id, servicio, fecha, hora, estado) VALUES (?, ?, ?, ?, ?)',
         [req.user.userId, servicio, fecha, hora, 'pendiente']
       )
+
+      console.log('Cita guardada en BD. ID:', result.insertId);
+
+      // Obtener el correo del usuario si no está en el payload del token
+      let userEmail = req.user.email;
+      if (!userEmail) {
+        const [userRows] = await db.query('SELECT email FROM users WHERE id = ?', [req.user.userId]);
+        userEmail = userRows[0]?.email;
+      }
+
+      console.log('Email del usuario para confirmación:', userEmail);
+
+      // Enviar correo de confirmación
+      if (userEmail) {
+        sendConfirmationEmail(userEmail, { servicio, fecha, hora })
+          .catch(err => console.error('Error al enviar email:', err));
+      }
 
       res.status(201).json({ message: 'Cita creada correctamente', appointmentId: result.insertId })
     } catch (err) {

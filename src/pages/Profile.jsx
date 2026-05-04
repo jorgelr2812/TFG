@@ -1,25 +1,61 @@
 import React, { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getUserAppointments, submitReview } from '../lib/api'
+import { getUserAppointments, submitReview, getProfile } from '../lib/api'
 import { getOrders } from '../lib/shop'
-import { User, Calendar, ShoppingBag, Star, Award, ChevronRight, Clock, MessageSquare } from 'lucide-react'
+import { User, Calendar, ShoppingBag, Star, Award, ChevronRight, Clock, MessageSquare, Truck, Scissors, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function Profile() {
-  const { user, token } = useAuth()
+  const { user, token, setAuth } = useAuth()
+  const location = useLocation()
   const [appointments, setAppointments] = useState([])
+  const [freshUser, setFreshUser] = useState(null)
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('citas')
 
   useEffect(() => {
+    // Sincronizar pestaña con la URL
+    const params = new URLSearchParams(location.search)
+    const tab = params.get('tab')
+    if (tab === 'purchases') setActiveTab('pedidos')
+    else if (tab === 'tracking') setActiveTab('tracking')
+    else setActiveTab('citas')
+  }, [location])
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
-        const [apptsRes] = await Promise.all([
-          getUserAppointments(token)
+        const [apptsRes, profileRes] = await Promise.all([
+          getUserAppointments(token),
+          getProfile(token)
         ])
         setAppointments(apptsRes.appointments || [])
-        setOrders(getOrders().filter(o => o.userId === user?.id))
+        if (profileRes.profile) {
+          setFreshUser(profileRes.profile)
+          // Opcional: Actualizar el contexto global si los puntos han cambiado
+          if (profileRes.profile.puntos !== user?.puntos) {
+            setAuth(profileRes.profile, token)
+          }
+        }
+        
+        const realOrders = getOrders().filter(o => o.userId === user?.id)
+        if (realOrders.length > 0) {
+          setOrders(realOrders)
+        } else {
+          // SIMULACIÓN PARA EL TFG: Pedido de prueba si no hay reales
+          setOrders([{
+            id: 'ORD-SIM-99',
+            total: 25.50,
+            status: 'En camino',
+            createdAt: new Date().toISOString(),
+            items: [
+              { name: 'Cera Premium Matte JLR', quantity: 1, price: 15.00 },
+              { name: 'Champú Anti-caída', quantity: 1, price: 10.50 }
+            ]
+          }])
+        }
       } catch (err) {
         console.error('Error fetching profile data:', err)
       } finally {
@@ -76,25 +112,31 @@ export default function Profile() {
             </div>
             <div>
               <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Puntos JLR</p>
-              <p className="text-2xl font-black text-brand-dark dark:text-white">{user?.puntos || 0} PTS</p>
+              <p className="text-2xl font-black text-brand-dark dark:text-white">{(freshUser || user)?.puntos || 0} PTS</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-4 mb-8">
+      <div className="flex gap-4 mb-8 overflow-x-auto pb-2 no-scrollbar">
         <button 
           onClick={() => setActiveTab('citas')}
-          className={`flex items-center gap-2 px-8 py-3 rounded-2xl font-bold transition-all ${activeTab === 'citas' ? 'bg-brand-dark text-white shadow-xl' : 'bg-white dark:bg-slate-900 text-gray-500'}`}
+          className={`flex items-center gap-2 px-8 py-3 rounded-2xl font-bold transition-all whitespace-nowrap ${activeTab === 'citas' ? 'bg-brand-dark text-white shadow-xl' : 'bg-white dark:bg-slate-900 text-gray-500'}`}
         >
           <Calendar size={18} /> Mis Citas
         </button>
         <button 
           onClick={() => setActiveTab('pedidos')}
-          className={`flex items-center gap-2 px-8 py-3 rounded-2xl font-bold transition-all ${activeTab === 'pedidos' ? 'bg-brand-dark text-white shadow-xl' : 'bg-white dark:bg-slate-900 text-gray-500'}`}
+          className={`flex items-center gap-2 px-8 py-3 rounded-2xl font-bold transition-all whitespace-nowrap ${activeTab === 'pedidos' ? 'bg-brand-dark text-white shadow-xl' : 'bg-white dark:bg-slate-900 text-gray-500'}`}
         >
-          <ShoppingBag size={18} /> Mis Pedidos
+          <ShoppingBag size={18} /> Mis Compras
+        </button>
+        <button 
+          onClick={() => setActiveTab('tracking')}
+          className={`flex items-center gap-2 px-8 py-3 rounded-2xl font-bold transition-all whitespace-nowrap ${activeTab === 'tracking' ? 'bg-brand-dark text-white shadow-xl' : 'bg-white dark:bg-slate-900 text-gray-500'}`}
+        >
+          <Truck size={18} /> Seguimiento
         </button>
       </div>
 
@@ -144,7 +186,7 @@ export default function Profile() {
             ) : (
               <div className="card text-center py-20 text-gray-400">Sin citas registradas todavía.</div>
             )
-          ) : (
+          ) : activeTab === 'pedidos' ? (
             orders.length > 0 ? (
               orders.map(order => (
                 <div key={order.id} className="card">
@@ -165,28 +207,81 @@ export default function Profile() {
             ) : (
               <div className="card text-center py-20 text-gray-400">Aún no has comprado nada.</div>
             )
+          ) : (
+            /* Tab de Seguimiento */
+            <div className="space-y-6">
+              {orders.length > 0 ? (
+                orders.map(order => (
+                  <div key={order.id} className="card relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 bg-brand-accent/10 text-brand-accent rounded-bl-3xl font-black text-[10px]">EN CAMINO</div>
+                    <h3 className="font-black text-xl mb-6 flex items-center gap-2">
+                      <Truck className="text-brand-accent" /> Pedido #{order.id.slice(-6)}
+                    </h3>
+                    
+                    <div className="relative pt-8 pb-4">
+                       <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-100 dark:bg-slate-800 -translate-y-1/2 rounded-full"></div>
+                       <div className="absolute top-1/2 left-0 w-2/3 h-1 bg-brand-accent -translate-y-1/2 rounded-full"></div>
+                       
+                       <div className="relative flex justify-between">
+                          {[
+                            { label: 'Confirmado', icon: CheckCircle, active: true },
+                            { label: 'Procesando', icon: Clock, active: true },
+                            { label: 'Enviado', icon: Truck, active: true },
+                            { label: 'Entregado', icon: ShoppingBag, active: false }
+                          ].map((step, i) => (
+                            <div key={i} className="flex flex-col items-center gap-3">
+                               <div className={`w-8 h-8 rounded-full flex items-center justify-center relative z-10 transition-all ${step.active ? 'bg-brand-accent text-white scale-125' : 'bg-gray-200 dark:bg-slate-800 text-gray-400'}`}>
+                                 <step.icon size={16} />
+                               </div>
+                               <span className={`text-[10px] font-black uppercase tracking-widest ${step.active ? 'text-brand-dark dark:text-white' : 'text-gray-400'}`}>{step.label}</span>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="card text-center py-20 text-gray-400 italic">No hay pedidos activos para rastrear.</div>
+              )}
+            </div>
           )}
         </section>
 
         {/* Sidebar Informativa */}
         <aside className="space-y-8">
-           <div className="card bg-brand-dark dark:bg-slate-900 border-none text-white overflow-hidden relative">
-              <div className="absolute top-0 right-0 p-8 opacity-10">
-                <Award size={120} />
+           <div className="card bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 overflow-hidden relative shadow-xl">
+              <div className="absolute top-0 right-0 p-8 opacity-[0.03] dark:opacity-[0.05] rotate-12 translate-x-8 -translate-y-8 text-brand-dark dark:text-white">
+                <Award size={160} />
               </div>
-              <h3 className="text-2xl font-black mb-4 relative z-10">Beneficios JLR</h3>
-              <p className="text-gray-400 text-sm mb-8 relative z-10 leading-relaxed">
-                Por cada 1€ gastado ganas 1 punto. Canjea tus puntos por descuentos directos en tu próxima visita.
-              </p>
-              <div className="space-y-4 relative z-10">
-                 <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-400">100 Puntos</span>
-                    <span className="font-bold">5€ Dto.</span>
-                 </div>
-                 <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-brand-accent h-full" style={{ width: `${Math.min(100, (user?.puntos / 100) * 100)}%` }}></div>
-                 </div>
-                 <p className="text-[10px] text-brand-accent font-black tracking-widest">PRÓXIMO NIVEL: VIP JLR</p>
+              <div className="relative z-10">
+                <h3 className="text-xl font-black mb-4 flex items-center gap-2 text-brand-dark dark:text-white uppercase tracking-tighter">
+                  <Award className="text-brand-accent" /> Beneficios JLR
+                </h3>
+                <p className="text-gray-500 dark:text-slate-400 text-sm mb-8 leading-relaxed font-medium italic">
+                  Por cada 1€ gastado ganas 1 punto. Canjea tus puntos por descuentos directos en tu próxima visita.
+                </p>
+                
+                <div className="space-y-5">
+                   <div className="flex justify-between items-end">
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-brand-accent tracking-[0.2em] mb-1">Tu progreso actual</p>
+                        <span className="text-sm font-black text-gray-800 dark:text-slate-200 uppercase">100 Puntos = 5€ Descuento</span>
+                      </div>
+                      <span className="text-xs font-black text-brand-dark dark:text-white">{(freshUser || user)?.puntos || 0} / 100</span>
+                   </div>
+                   
+                   <div className="w-full bg-gray-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden p-0.5 border border-gray-200 dark:border-slate-700">
+                      <div 
+                        className="bg-brand-accent h-full rounded-full shadow-lg transition-all duration-1000 ease-out" 
+                        style={{ width: `${Math.min(100, (((freshUser || user)?.puntos || 0) / 100) * 100)}%` }}
+                      ></div>
+                   </div>
+                   
+                   <div className="flex items-center gap-2 pt-2 bg-brand-accent/5 dark:bg-brand-accent/10 p-3 rounded-xl border border-brand-accent/10">
+                      <div className="w-2 h-2 rounded-full bg-brand-accent animate-pulse"></div>
+                      <p className="text-[10px] text-brand-accent font-black tracking-widest uppercase">Próximo objetivo: VIP JLR</p>
+                   </div>
+                </div>
               </div>
            </div>
 

@@ -87,7 +87,7 @@ export default function AgendaManager() {
         </div>
         <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
            {['calendar', 'table'].map(m => (
-             <button key={m} onClick={() => setViewMode(m)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === m ? 'bg-white dark:bg-slate-700 shadow-sm' : 'text-gray-400'}`}>
+             <button key={m} onClick={() => setViewMode(m)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === m ? 'bg-white dark:bg-slate-700 shadow-sm text-brand-dark dark:text-white' : 'text-gray-400'}`}>
                {m === 'calendar' ? 'Calendario' : 'Listado'}
              </button>
            ))}

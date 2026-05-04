@@ -62,7 +62,10 @@ app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
+import { initReminderScheduler } from './scheduler.js';
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log(`Server is listening on port ${port}`);
+    initReminderScheduler(); // Iniciar programador de recordatorios
 });

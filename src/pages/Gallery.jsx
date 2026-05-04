@@ -30,7 +30,7 @@ export default function Gallery() {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-accent/10 text-brand-accent text-sm font-bold mb-6">
             <Sparkles className="w-4 h-4" /> TRABAJOS PROFESIONALES
           </div>
-          <h1 className="text-5xl md:text-6xl font-black text-brand-dark dark:text-white mb-6">Nuestra Exposición</h1>
+          <h1 className="text-5xl md:text-6xl font-black mb-6" style={{ color: 'var(--text-main)' }}>Nuestra Exposición</h1>
           <p className="text-gray-500 dark:text-slate-400 max-w-2xl mx-auto text-lg leading-relaxed">
             Explora nuestros mejores cortes, peinados y transformaciones. Calidad artesanal en cada detalle.
           </p>

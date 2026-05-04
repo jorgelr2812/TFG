@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { BarChart3, Users, DollarSign, CalendarCheck, ShoppingCart, TrendingUp, Sparkles, AlertCircle } from 'lucide-react';
+import { BarChart3, Users, DollarSign, CalendarCheck, ShoppingCart, TrendingUp, Sparkles, AlertCircle, Scissors } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import { Bar, Pie } from 'react-chartjs-2';
 import { getProducts, getOrders, computeShopStats } from '../lib/shop';
 import { getAppointments, getSuggestions } from '../lib/api';
 import AgendaManager from '../components/AgendaManager';
 import StockManager from '../components/StockManager';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
 export default function JefeDashboard() {
   const { token } = useAuth();
@@ -17,6 +17,7 @@ export default function JefeDashboard() {
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState(null);
   const [salesData, setSalesData] = useState(null);
+  const [serviceData, setServiceData] = useState(null);
   const [shopStats, setShopStats] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
 
@@ -32,11 +33,19 @@ export default function JefeDashboard() {
         setSuggestions(suggestionsList);
 
         const monthlyData = {};
+        const serviceDistribution = {};
         let citaRevenue = 0;
+        let confirmedCount = 0;
+
         citasData.forEach(cita => {
+          if (cita.estado === 'completada' || cita.estado === 'confirmada') confirmedCount++;
           if (cita.estado === 'completada') {
             citaRevenue += parseFloat(cita.precio || 0);
           }
+          
+          // Reparto por servicio
+          serviceDistribution[cita.servicio] = (serviceDistribution[cita.servicio] || 0) + 1;
+          
           const month = new Date(cita.fecha).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
           monthlyData[month] = (monthlyData[month] || 0) + 1;
         });
@@ -66,11 +75,22 @@ export default function JefeDashboard() {
           }]
         });
 
+        setServiceData({
+          labels: Object.keys(serviceDistribution),
+          datasets: [{
+            data: Object.values(serviceDistribution),
+            backgroundColor: [
+              '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'
+            ],
+            borderWidth: 0
+          }]
+        });
+
         setShopStats(shopStats);
         setStats([
-          { name: 'Citas Totales', value: citasData.length, icon: CalendarCheck, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/10' },
+          { name: 'Citas Hoy', value: confirmedCount, icon: CalendarCheck, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/10' },
           { name: 'Sugerencias', value: suggestionsList.length, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/10' },
-          { name: 'Ingresos Servicios', value: citaRevenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }), icon: Sparkles, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/10' },
+          { name: 'Ticket Medio', value: (citaRevenue / (citasData.filter(c => c.estado === 'completada').length || 1)).toFixed(2) + '€', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/10' },
           { name: 'Caja Total', value: totalRevenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }), icon: TrendingUp, color: 'text-brand-accent', bg: 'bg-blue-50 dark:bg-blue-900/10' },
         ]);
       } catch (err) {
@@ -133,9 +153,9 @@ export default function JefeDashboard() {
         </section>
 
         {/* Gráficos Principales */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           {/* Citas Gráfico */}
-          <div className="card">
+          <div className="card lg:col-span-1">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
               <CalendarCheck className="text-brand-accent" /> Histórico de Citas
             </h3>
@@ -143,11 +163,21 @@ export default function JefeDashboard() {
           </div>
 
           {/* Tienda Gráfico */}
-          <div className="card">
+          <div className="card lg:col-span-1">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
                <ShoppingCart className="text-emerald-500" /> Rendimiento Tienda
             </h3>
             {salesData ? <Bar data={salesData} options={{ responsive: true, plugins: { legend: { display: false } } }} /> : <Skeleton height={300} />}
+          </div>
+
+          {/* Servicios Populares (NUEVO) */}
+          <div className="card lg:col-span-1">
+            <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+               <Scissors className="text-purple-500" /> Popularidad Servicios
+            </h3>
+            <div className="flex justify-center items-center h-[250px]">
+              {serviceData ? <Pie data={serviceData} options={{ responsive: true, maintainAspectRatio: false }} /> : <Skeleton circle height={200} width={200} />}
+            </div>
           </div>
         </div>
 

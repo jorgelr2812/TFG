@@ -86,19 +86,19 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[var(--canvas)]"></div>
         </div>
 
-        <div className="container mx-auto px-6 relative z-10 text-center">
-          <div className="inline-block px-4 py-1.5 rounded-full bg-brand-accent/20 text-brand-accent text-sm font-bold mb-6 border border-brand-accent/30">
-            ESPECIALISTAS EN IMAGEN
+        <div className="container mx-auto px-6 relative z-10 text-center py-10 md:py-0">
+          <div className="inline-block px-4 py-1.5 rounded-full bg-brand-accent/20 text-brand-accent text-[10px] md:text-sm font-black mb-4 md:mb-6 border border-brand-accent/30 tracking-widest uppercase">
+            Especialistas en Imagen
           </div>
-          <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight">
+          <h1 className="text-4xl md:text-7xl font-black text-white mb-4 md:mb-6 leading-tight tracking-tighter">
             Bienvenido a <br className="hidden md:block" /> nuestra Peluquería
           </h1>
-          <p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
+          <p className="text-sm md:text-xl text-white/90 max-w-2xl mx-auto mb-8 md:mb-10 leading-relaxed font-medium drop-shadow-lg">
             Tu estilo es nuestra pasión. Ofrecemos los mejores servicios de barbería y estilismo en un ambiente único y profesional.
           </p>
           <button 
             onClick={() => document.getElementById('reserva')?.scrollIntoView({ behavior: 'smooth' })} 
-            className="btn-primary text-lg px-10 py-4 shadow-xl shadow-brand-accent/30"
+            className="btn-primary w-full md:w-auto text-sm md:text-lg px-8 md:px-10 py-4 shadow-xl shadow-brand-accent/30 active:scale-95 transition-transform"
           >
             Reservar Cita
           </button>
@@ -106,7 +106,7 @@ export default function Home() {
       </section>
 
       {/* SECCIÓN DE RESERVA Y MENSAJES */}
-      <div id="reserva" className="container mx-auto px-6 pb-24 -mt-20 relative z-20 grid lg:grid-cols-2 gap-10">
+      <div id="reserva" className="container mx-auto px-6 pb-24 mt-12 md:-mt-20 relative z-20 grid lg:grid-cols-2 gap-10">
         {/* Formulario Citas */}
         <div className="card shadow-2xl border-none">
           <div className="flex items-center gap-3 mb-6">
@@ -146,7 +146,7 @@ export default function Home() {
               <div className="flex flex-col justify-center">
                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-100 dark:border-emerald-800/30">
                     <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Recompensa JLR</p>
-                    <p className="text-sm font-bold">Ganarás <span className="text-emerald-500">+{calculatePoints(selectedServicio)} puntos</span></p>
+                     <p className="text-sm font-bold text-gray-800 dark:text-gray-100">Ganarás <span className="text-emerald-500 font-black">+{calculatePoints(selectedServicio)} puntos</span></p>
                  </div>
               </div>
             </div>

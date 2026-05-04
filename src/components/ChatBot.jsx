@@ -1,24 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, User, Bot, Sparkles, Scissors, Clock, MapPin } from 'lucide-react';
+import { MessageCircle, X, Send, User, Bot, Sparkles, Scissors, Clock, MapPin, ShoppingBag, Gift } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const BOT_KNOWLEDGE = {
-  greetings: ['hola', 'buenos dias', 'buenas tardes', 'buenas', 'hey'],
-  services: ['corte', 'tinte', 'mechas', 'balayage', 'barba', 'lavar', 'peinar', 'tratamiento', 'keratina'],
-  hours: ['horario', 'abierto', 'cierran', 'cuándo', 'hora', 'agenda'],
-  location: ['donde', 'donde estan', 'ubicacion', 'direccion', 'mapa', 'sitio'],
-  prices: ['cuanto cuesta', 'precio', 'barato', 'caro', 'dinero', 'tarifas', 'cuanto vale']
+  greetings: ['hola', 'buenos dias', 'buenas tardes', 'buenas', 'hey', 'saludos'],
+  services: ['corte', 'tinte', 'mechas', 'balayage', 'barba', 'lavar', 'peinar', 'tratamiento', 'keratina', 'degradado', 'skin fade'],
+  hours: ['horario', 'abierto', 'cierran', 'cuándo', 'hora', 'la hora', 'mañana', 'tarde'],
+  location: ['donde', 'donde estan', 'ubicacion', 'direccion', 'mapa', 'sitio', 'lugar', 'calle'],
+  prices: ['cuanto cuesta', 'precio', 'barato', 'caro', 'dinero', 'tarifas', 'cuanto vale', 'oferta', 'descuento'],
+  points: ['puntos', 'puntos jlr', 'recompensa', 'fidelidad', 'ganar puntos', 'regalo', 'canjear'],
+  products: ['tienda', 'comprar', 'champú', 'cera', 'aceite', 'gel', 'lacas', 'stock', 'productos'],
+  booking: ['cita', 'reserva', 'reservar', 'pedir cita', 'turno', 'agendar', 'cancelar']
 };
 
 const RESPONSES = {
-  greetings: "¡Hola! Soy tu asistente de Barbería JLR. ¿En qué podemos ayudarte hoy?",
-  services: "En JLR somos especialistas en cortes modernos, degradados extremos, coloración técnica y cuidado de barba. ¿Te gustaría reservar una sesión?",
-  hours: "Nuestro equipo te espera de Lunes a Sábado de 09:00 a 20:00. ¡Reserva tu hueco ahora!",
-  location: "Estamos en el corazón de la ciudad. Consulta el mapa interactivo en la sección de Contacto para guiarnos.",
-  prices: "Calidad profesional a precios competitivos: desde 10€ (Barba) hasta servicios completos de color. ¡Consulta el listado en Reservas!",
-  default: "Lo siento, no he entendido esa parte. ¿Quieres saber sobre precios, horarios, servicios o dónde estamos?"
+  greetings: "¡Hola! Soy tu asistente de Barbería JLR. 👋 ¿En qué podemos ayudarte hoy? ¿Buscas cita, productos o info sobre tus puntos?",
+  services: "En JLR somos especialistas en cortes modernos, degradados extremos (Skin Fade), coloración técnica y cuidado integral de barba. ¿Te gustaría ver disponibilidad hoy?",
+  hours: "Nuestro equipo te espera de Lunes a Sábado de 09:00 a 20:00 de forma ininterrumpida. ¡Te recomendamos reservar con antelación!",
+  location: "Estamos en el centro neurálgico de la ciudad. Tienes el mapa interactivo esperándote en la pestaña de 'Contacto'. ¡No tiene pérdida!",
+  prices: "Calidad premium desde 10€ (Barba) hasta servicios completos de color y corte. Puedes ver el desglose exacto al seleccionar un servicio en 'Citas'.",
+  points: "¡Tu fidelidad tiene premio! Con cada servicio ganas Puntos JLR que puedes ver en tu Perfil. Cada 1€ es 1 punto. ¡Pronto podrás canjearlos por descuentos!",
+  products: "En nuestra tienda online tenemos ceras de fijación mate, aceites de argán y packs exclusivos JLR. ¡Te lo preparamos para que te lo lleves tras tu corte!",
+  booking: "Es muy fácil: ve a Inicio, elige tu servicio, el barbero que prefieras y la hora. ¡Recibirás una confirmación al instante!",
+  default: "Vaya, todavía estoy aprendiendo. 😅 ¿Probamos con algo sobre precios, horarios, servicios, puntos o dónde estamos?"
 };
 
 export default function ChatBot() {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { id: 1, text: "¡Bienvenido a Barbería JLR! ✂️ Soy tu asistente personal. ¿Tienes alguna duda sobre nuestras citas o servicios premium?", sender: 'bot' }
@@ -26,6 +34,14 @@ export default function ChatBot() {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
+
+  // RESET DEL CHAT AL CAMBIAR DE USUARIO O CERRAR SESIÓN
+  useEffect(() => {
+    setMessages([
+      { id: Date.now(), text: `¡Hola de nuevo! ✂️ Soy el asistente de JLR. ¿En qué podemos ayudarte hoy?`, sender: 'bot' }
+    ]);
+    setIsOpen(false);
+  }, [user?.id]); // Solo se dispara si el ID del usuario cambia (logout/login)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -43,20 +59,23 @@ export default function ChatBot() {
     setInputValue('');
     setIsTyping(true);
 
-    // Simulate AI logic
     setTimeout(() => {
       const lowerInput = inputValue.toLowerCase();
       let response = RESPONSES.default;
 
-      if (BOT_KNOWLEDGE.greetings.some(k => lowerInput.includes(k))) response = RESPONSES.greetings;
+      // Prioridad de matching por palabras clave
+      if (BOT_KNOWLEDGE.points.some(k => lowerInput.includes(k))) response = RESPONSES.points;
+      else if (BOT_KNOWLEDGE.products.some(k => lowerInput.includes(k))) response = RESPONSES.products;
+      else if (BOT_KNOWLEDGE.booking.some(k => lowerInput.includes(k))) response = RESPONSES.booking;
       else if (BOT_KNOWLEDGE.services.some(k => lowerInput.includes(k))) response = RESPONSES.services;
       else if (BOT_KNOWLEDGE.hours.some(k => lowerInput.includes(k))) response = RESPONSES.hours;
       else if (BOT_KNOWLEDGE.location.some(k => lowerInput.includes(k))) response = RESPONSES.location;
       else if (BOT_KNOWLEDGE.prices.some(k => lowerInput.includes(k))) response = RESPONSES.prices;
+      else if (BOT_KNOWLEDGE.greetings.some(k => lowerInput.includes(k))) response = RESPONSES.greetings;
 
       setMessages(prev => [...prev, { id: Date.now() + 1, text: response, sender: 'bot' }]);
       setIsTyping(false);
-    }, 1000);
+    }, 800);
   };
 
   return (
@@ -112,8 +131,8 @@ export default function ChatBot() {
           {/* Quick Actions */}
           <div className="px-4 py-3 flex flex-wrap gap-2 border-t border-[var(--border)] bg-[var(--surface)]">
             <button onClick={() => setInputValue('Dime los precios')} className="text-[10px] font-black bg-gray-50 dark:bg-slate-900 border border-[var(--border)] text-gray-500 dark:text-slate-400 hover:bg-brand-accent hover:text-white px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm uppercase tracking-widest"><Sparkles className="w-3 h-3" /> Precios</button>
-            <button onClick={() => setInputValue('¿Cuál es vuestro horario?')} className="text-[10px] font-black bg-gray-50 dark:bg-slate-900 border border-[var(--border)] text-gray-500 dark:text-slate-400 hover:bg-brand-accent hover:text-white px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm uppercase tracking-widest"><Clock className="w-3 h-3" /> Horarios</button>
-            <button onClick={() => setInputValue('¿Dónde estáis?')} className="text-[10px] font-black bg-gray-50 dark:bg-slate-900 border border-[var(--border)] text-gray-500 dark:text-slate-400 hover:bg-brand-accent hover:text-white px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm uppercase tracking-widest"><MapPin className="w-3 h-3" /> Dirección</button>
+            <button onClick={() => setInputValue('¿Cómo canjeo mis puntos?')} className="text-[10px] font-black bg-gray-50 dark:bg-slate-900 border border-[var(--border)] text-gray-500 dark:text-slate-400 hover:bg-brand-accent hover:text-white px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm uppercase tracking-widest"><Gift className="w-3 h-3" /> Puntos</button>
+            <button onClick={() => setInputValue('¿Tenéis ceras en la tienda?')} className="text-[10px] font-black bg-gray-50 dark:bg-slate-900 border border-[var(--border)] text-gray-500 dark:text-slate-400 hover:bg-brand-accent hover:text-white px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm uppercase tracking-widest"><ShoppingBag className="w-3 h-3" /> Tienda</button>
           </div>
 
           {/* Footer Input */}
